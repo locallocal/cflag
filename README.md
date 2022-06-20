@@ -30,6 +30,19 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+Run example after building.
+```shell
+# ./build/bin/example --help
+Usage: ./build/bin/example [options]
+
+ -c  --config[string]	config file of example.(./config.conf)
+ -d  --daemon[bool]	run with daemonize.(false)
+     --ip[string]	server ip address.(0.0.0.0)
+ -k  --point[float]	percent of usage.(0.000000)
+ -p  --port[int]	server tcp port.(9999)
+ -v  --version[bool]	show server version.(false)
+```
+
 ## 2.How to build
 - build release or debug
 ```
