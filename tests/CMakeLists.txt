@@ -2,6 +2,7 @@ find_package(GTest REQUIRED)
 
 add_executable(cflag-test
     test_cflag_bool.cc
+    test_cflag_builtin_types.cc
     test_cflag_common.cc
     test_cflag_fixed_width.cc
     test_cflag_float.cc
