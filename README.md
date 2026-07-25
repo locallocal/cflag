@@ -1,5 +1,7 @@
 # cflag
-The cflag package contains a C++ library that implements commandline flags processing. It includes built-in support for standard types such as string and the ability to define flags in the source file in which they are used.
+cflag is a C++11 header-only command-line flag library. It provides template-based
+registration, built-in support for `bool`, `int`, `float`, and `std::string`, and
+an extension point for custom types.
 
 ## 1.How to use
 
@@ -16,12 +18,12 @@ int main(int argc, char *argv[]) {
     std::string ip;
     std::string conf_file;
 
-    cflag::bool_varp(&daemon, "daemon", "d", false, "run with daemonize.");
-    cflag::bool_varp(&version, "version", "v", false, "show server version.");
-    cflag::int_varp(&port, "port", "p", 9999, "server tcp port.");
-    cflag::float_varp(&point, "point", "k", 0.0, "percent of usage.");
-    cflag::string_varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
-    cflag::string_var(&ip, "ip", "0.0.0.0", "server ip address.");
+    cflag::varp(&daemon, "daemon", "d", false, "run with daemonize.");
+    cflag::varp(&version, "version", "v", false, "show server version.");
+    cflag::varp(&port, "port", "p", 9999, "server tcp port.");
+    cflag::varp(&point, "point", "k", 0.0f, "percent of usage.");
+    cflag::varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
+    cflag::var(&ip, "ip", "0.0.0.0", "server ip address.");
     cflag::parse(argc, argv);
 
     std::cout << "daemon: " << std::boolalpha << daemon << std::endl;
@@ -32,7 +34,14 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-Run example after building.
+Only `include/cflag.h` is required. The example can be compiled directly:
+
+```shell
+c++ -std=c++11 -Iinclude example/example.cc -o example
+```
+
+Run the CMake-built example:
+
 ```shell
 # ./build/bin/example --help
 Usage: ./build/bin/example [options]
@@ -46,6 +55,14 @@ Usage: ./build/bin/example [options]
 ```
 
 ## 2.How to build
+
+The CMake target is an interface library and can be consumed as `cflag::cflag`.
+
+```cmake
+add_subdirectory(cflag)
+target_link_libraries(your_target PRIVATE cflag::cflag)
+```
+
 - build release or debug
 ```
 # ./build.sh
@@ -68,47 +85,56 @@ Usage: ./build/bin/example [options]
 ```
 
 ## 3.API
-#### 3.1 bool
-- `bool_var(bool *arg, const char *name, bool default_value, const char *usage)`
 
-- `bool_var(bool *arg, std::string &name, bool default_value, std::stirng &usage)`
+### 3.1 Template registration
 
-- `bool_varp(bool *arg, const char *name, const char *short_name, bool default_value, const char *usage)`
+- `var<T>(T *target, name, default_value, usage)`
+- `varp<T>(T *target, name, short_name, default_value, usage)`
 
-- `bool_varp(bool *arg, std::string &name, std::string &short_name, bool_default_value, std::string &usage)`
+The earlier `bool_var`, `int_var`, `float_var`, and `string_var` APIs remain
+available as compatibility wrappers.
 
-#### 3.2 int
-- `int_var(int *arg, const char *name, int default_value, const char *usage)`
+### 3.2 Custom types
 
-- `int_var(int *arg, std::string &name, int default_value, std::string &usage)`
+Custom flag types are supported by specializing `cflag::flag_traits<T>`:
 
-- `int_varp(int *arg, const char *name, const char *short_name, int default_value, const char *usage)`
+```c++
+enum class mode { safe, fast };
 
-- `int_varp(int *arg, std::string &name, std::string &short_name, int default_value, std::string &usage)`
+namespace cflag {
+template <>
+struct flag_traits<mode> {
+    static const std::string &type_name() {
+        static const std::string name = "mode";
+        return name;
+    }
 
-#### 3.3 float
-- `float_var(float *arg, const char *name, float default_value, const char *usage)`
+    static std::string format(mode value) {
+        return value == mode::safe ? "safe" : "fast";
+    }
 
-- `float_var(float *arg, std::string &name, float default_value, std::string &usage)`
+    static bool parse(const std::string &text, mode &value) {
+        if (text == "safe") {
+            value = mode::safe;
+            return true;
+        }
+        if (text == "fast") {
+            value = mode::fast;
+            return true;
+        }
+        return false;
+    }
 
-- `float_varp(float *arg, const char *name, const char *short_name, float default_value, const char *usage)`
+    static bool has_implicit_value() {
+        return false;
+    }
+};
+} // namespace cflag
+```
 
-- `float_varp(float *arg, std::string &name, std::string &short_name, float default_value, std::string &usage)`
+### 3.3 Parsing
 
-#### 3.4 string
-- `string_var(string *arg, const char *name, const char *default_value, const char *usage)`
-
-- `string_var(string *arg, std::string &name, std::string default_value, std::string &usage)`
-
-- `string_varp(string *arg, const char *name, const char *short_name, const char *default_value, const char *usage)`
-
-- `string_varp(string *arg, std::string &name, std::string &short_name, std::string &default_value, std::string &usage)`
-
-#### 3.5 other
 - `parse(int argc, char *argv[])`
-
-- `parse(std::vector<std::string> arguments)`
-
+- `parse(const std::vector<std::string> &arguments)`
 - `reset()`
-
 - `args()`
