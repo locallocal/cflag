@@ -6,6 +6,8 @@ The cflag package contains a C++ library that implements commandline flags proce
 ```c++
 #include "cflag.h"
 
+#include <iostream>
+
 int main(int argc, char *argv[]) {
     int port = 0;
     bool daemon = false;
@@ -50,15 +52,14 @@ Usage: ./build/bin/example [options]
 # ./build.sh --debug
 ```
 
-- run tests after build.
+- build and run tests (GoogleTest is required).
 ```
 # ./build.sh --test
 ```
 
-- run source code coverage analysis after run tests.
+- build, run tests, and generate a source coverage report (lcov is required).
 ```
 # ./build.sh --cov
-# ll cov
 ```
 
 - clean directory.

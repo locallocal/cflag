@@ -14,11 +14,20 @@
 
 #include "float.h"
 
+#include <stdexcept>
+
 bool cflag::c_float_value::set(std::string &value) {
     try {
-        *arg_ = std::stof(value);
+        std::size_t parsed_length = 0;
+        const float parsed_value = std::stof(value, &parsed_length);
+        if (parsed_length != value.size()) {
+            return false;
+        }
+        *arg_ = parsed_value;
         return true;
-    } catch(...) {
+    } catch (const std::invalid_argument &) {
+        return false;
+    } catch (const std::out_of_range &) {
         return false;
     }
 }

@@ -41,6 +41,17 @@ TEST(test_int, test_long_args_negative_int) {
     EXPECT_EQ(-1, result);
 }
 
+TEST(test_int, test_long_args_separate_value) {
+    int result = 0;
+    std::vector<std::string> arguments{"test-int", "--test", "42"};
+
+    cflag::reset();
+    cflag::int_var(&result, "test", 0, "test int.");
+    cflag::parse(arguments);
+
+    EXPECT_EQ(42, result);
+}
+
 TEST(test_int, test_short_args_positive_int) {
     int result = 0;
     std::vector<std::string> arguments;
@@ -103,5 +114,15 @@ TEST(test_int, test_invalid) {
     cflag::int_var(&result, "test", 0, "test invalid int value.");
     arguments.push_back("test-int");
     arguments.push_back("--test=invalid");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
+}
+
+TEST(test_int, test_rejects_trailing_characters) {
+    int result = 0;
+    std::vector<std::string> arguments{"test-int", "--test=12px"};
+
+    cflag::reset();
+    cflag::int_var(&result, "test", 0, "test invalid int value.");
+
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }

@@ -14,6 +14,8 @@
 
 #include "cflag.h"
 
+#include <iostream>
+
 int main(int argc, char *argv[]) {
     int port = 0;
     bool daemon = false;
@@ -36,4 +38,3 @@ int main(int argc, char *argv[]) {
     std::cout << "conf_file: " << conf_file << std::endl;
     return 0;
 }
-
