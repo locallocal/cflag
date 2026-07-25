@@ -14,8 +14,15 @@
 
 #include "cflag.h"
 
+#include <cstdlib>
+#include <iostream>
+
+const std::string cflag::k_help_flag_name = "help";
+const std::string cflag::k_help_short_flag_name = "h";
+const std::string cflag::k_global_flag_set_name = "global";
+
 std::shared_ptr<cflag::c_flag_set> cflag::g_flag_set =
-        std::make_shared<cflag::c_flag_set>(const_cast<std::string &>(cflag::k_global_flag_set_name));
+        std::make_shared<cflag::c_flag_set>(cflag::k_global_flag_set_name);
 
 void cflag::parse(int argc, char *argv[]) {
     g_flag_set->parse(argc, argv);
@@ -38,76 +45,84 @@ std::vector<std::string> &cflag::args() {
 }
 
 void cflag::c_flag_set::usage() {
-    std::cout << "Usage: " << program() << " [options]" << std::endl;
-    std::cout << std::endl;
+    std::cout << "Usage: " << program() << " [options]\n\n";
     print_flags();
 }
 
 void cflag::c_flag_set::print_flags() {
-    for (auto it = flags_.cbegin(); it != flags_.cend(); it++) {
-        auto flag = it->second;
+    for (const auto &entry : flags_) {
+        const auto &flag = entry.second;
         if (!flag->short_name().empty()) {
-            std::cout << " -" << it->second->short_name() << "  ";
+            std::cout << " -" << flag->short_name() << "  ";
         } else {
-            std::cout << "     "; 
+            std::cout << "     ";
         }
         if (!flag->name().empty()) {
-            std::cout << "--" << it->second->name();
+            std::cout << "--" << flag->name();
         } else {
             std::cout << "    ";
         }
         std::cout << "[" << flag->value()->type() << "]\t";
         std::cout << flag->usage();
         if (!flag->default_value().empty()) {
-            std::cout << "(" << flag->default_value() << ")" << std::endl;
+            std::cout << "(" << flag->default_value() << ")";
         }
+        std::cout << '\n';
     }
 }
 
 void cflag::c_flag_set::parse(int argc, char *argv[]) {
-    int index = 0;
     std::vector<std::string> arguments;
+    arguments.reserve(argc > 0 ? static_cast<std::size_t>(argc) : 0);
 
-    for (index = 0; index < argc; index++) {
+    for (int index = 0; index < argc; ++index) {
         arguments.push_back(argv[index]);
     }
     parse(arguments);
 }
 
 void cflag::c_flag_set::parse(std::vector<std::string> &arguments) {
-    int index = 0;
-    program(arguments[0]);
+    args_.clear();
+    if (arguments.empty()) {
+        program_.clear();
+        return;
+    }
 
-    for (index = 1; index < arguments.size(); index++) {
-        std::string seg = arguments.at(index);
-        if (seg.size() == 2 && seg == "--") {
+    program(arguments.front());
+
+    for (std::size_t index = 1; index < arguments.size(); ++index) {
+        const std::string &seg = arguments[index];
+        if (seg == "--") {
             args_.insert(args_.cend(), arguments.begin() + index + 1, arguments.end());
             break;
         }
-        if (seg.size() > 2 && seg.substr(0, 3) == "---") {
-            std::cout << "invalid argument " << seg << std::endl;
+        if (seg.compare(0, 3, "---") == 0) {
+            std::cerr << "invalid argument " << seg << '\n';
             exit(EXIT_FAILURE);
         }
 
-        if (seg.at(0) == '-' && seg.at(1) == '-') {
+        if (seg.size() > 2 && seg.compare(0, 2, "--") == 0) {
             parse_long_args_(seg, index, arguments);
             continue;
-        } else if (seg.at(0) == '-') {
+        }
+        if (seg.size() > 1 && seg.front() == '-') {
             parse_short_args_(seg, index, arguments);
             continue;
         }
-        args_.push_back(arguments.at(index));
+        args_.push_back(seg);
     }
 }
 
-void cflag::c_flag_set::parse_long_args_(std::string &seg, int &index, std::vector<std::string> &arguments) {
+void cflag::c_flag_set::parse_long_args_(const std::string &seg, std::size_t &index,
+        const std::vector<std::string> &arguments) {
     std::string flag_name;
     std::string flag_value;
     std::string arg = seg.substr(2);
 
     // get arg name and value
-    std::size_t found = arg.find("=");
-    if (found != std::string::npos) {
+    const std::size_t found = arg.find('=');
+    const bool has_inline_value = found != std::string::npos;
+    if (has_inline_value) {
         flag_name = arg.substr(0, found);
         flag_value = arg.substr(found + 1);
     } else {
@@ -121,32 +136,34 @@ void cflag::c_flag_set::parse_long_args_(std::string &seg, int &index, std::vect
     }
 
     // set flag value
-    auto flag = lookup_(flag_name);
+    auto flag = lookup_(flag_name, false);
     if (flag == nullptr) {
-        std::cerr << "flag " << flag_name << " not exist." << std::endl;
+        std::cerr << "flag " << flag_name << " not exist.\n";
         exit(EXIT_FAILURE);
     }
-    auto value = flag->value();
-    if (value->type() != k_bool_type_name && flag_value.empty()) {
-        std::cerr << "please set flag " << flag_name << " value." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    if (value->type() == k_bool_type_name && flag_value.empty()) {
+    const auto &value = flag->value();
+    if (value->type() == k_bool_type_name && !has_inline_value) {
         flag_value = "true";
+    } else if (!has_inline_value) {
+        if (index + 1 >= arguments.size()) {
+            std::cerr << "please set flag " << flag_name << " value.\n";
+            exit(EXIT_FAILURE);
+        }
+        flag_value = arguments[++index];
     }
     if (!value->set(flag_value)) {
-        std::cerr << "invalid value for " << flag_name << "." << std::endl;
+        std::cerr << "invalid value for " << flag_name << ".\n";
         exit(EXIT_FAILURE);
     }
 }
 
-void cflag::c_flag_set::parse_short_args_(std::string &seg, int &index, std::vector<std::string> &arguments) {
+void cflag::c_flag_set::parse_short_args_(const std::string &seg, std::size_t &index,
+        const std::vector<std::string> &arguments) {
     std::string flag_name;
     std::string flag_value;
     std::string arg = seg.substr(1);
-    int arg_index = 0;
 
-    for(arg_index = 0; arg_index < arg.size(); arg_index++) {
+    for (std::size_t arg_index = 0; arg_index < arg.size(); ++arg_index) {
         flag_name.clear();
         flag_name.push_back(arg.at(arg_index));
         if (flag_name == k_help_short_flag_name) {
@@ -154,59 +171,72 @@ void cflag::c_flag_set::parse_short_args_(std::string &seg, int &index, std::vec
             exit(EXIT_SUCCESS);
         }
 
-        auto flag = lookup_(flag_name);
+        auto flag = lookup_(flag_name, true);
         if (flag == nullptr) {
-            std::cerr << "flag " << flag_name << " not exist." << std::endl;
+            std::cerr << "flag " << flag_name << " not exist.\n";
             exit(EXIT_FAILURE);
         }
-        auto value = flag->value();
+        const auto &value = flag->value();
         if (value->type() == cflag::k_bool_type_name) {
             flag_value = "true";
         } else {
             if (arg_index == arg.size() - 1) {
-                index++;
-                flag_value = arguments.at(index);
+                if (index + 1 >= arguments.size()) {
+                    std::cerr << "please set flag " << flag_name << " value.\n";
+                    exit(EXIT_FAILURE);
+                }
+                flag_value = arguments[++index];
             } else {
-                arg_index++;
-                flag_value = arg.substr(arg_index);
-                arg_index = arg.size();
+                flag_value = arg.substr(arg_index + 1);
+                arg_index = arg.size() - 1;
             }
         }
         if (!value->set(flag_value)) {
-            std::cerr << "invalid value for " << flag_name << "." << std::endl;
+            std::cerr << "invalid value for " << flag_name << ".\n";
             exit(EXIT_FAILURE);
         }
     }
 }
 
-std::shared_ptr<cflag::c_flag> cflag::c_flag_set::lookup_(std::string &name) {
-    auto it = flags_.find(name);
-    if (it != flags_.end()) {
+std::shared_ptr<cflag::c_flag> cflag::c_flag_set::lookup_(const std::string &name, bool short_name) const {
+    const auto &flags = short_name ? short_flags_ : flags_;
+    const auto it = flags.find(name);
+    if (it != flags.end()) {
         return it->second;
-    }
-    auto s_it = short_flags_.find(name);
-    if (s_it != short_flags_.end()) {
-        return s_it->second;
     }
     return nullptr;
 }
 
-void cflag::c_flag_set::add_flag_(std::shared_ptr<cflag::c_flag> flag) {
-    std::string name = flag->name();
+void cflag::c_flag_set::add_flag_(const std::shared_ptr<cflag::c_flag> &flag) {
+    const std::string &name = flag->name();
+    const std::string &short_name = flag->short_name();
+
+    if (name.empty() && short_name.empty()) {
+        std::cerr << "flag name cannot be empty.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (name == k_help_flag_name || short_name == k_help_short_flag_name) {
+        std::cerr << "flag name is reserved for help.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (!short_name.empty() && short_name.size() != 1) {
+        std::cerr << "short flag name must contain one character.\n";
+        exit(EXIT_FAILURE);
+    }
+
     if (!name.empty()) {
         auto it = flags_.find(name);
         if (it != flags_.end()) {
-            std::cerr << "redefine flag " << name << "." << std::endl;
+            std::cerr << "redefine flag " << name << ".\n";
             exit(EXIT_FAILURE);
         }
         flags_[name] = flag;
     }
-        
-    std::string short_name = flag->short_name();
+
     if (!short_name.empty()) {
         auto it = short_flags_.find(short_name);
         if (it != short_flags_.end()) {
-            std::cerr << "redefine flag " << short_name << "." << std::endl;
+            std::cerr << "redefine flag " << short_name << ".\n";
             exit(EXIT_FAILURE);
         }
         short_flags_[short_name] = flag;
@@ -217,4 +247,5 @@ void cflag::c_flag_set::reset() {
     flags_.clear();
     short_flags_.clear();
     args_.clear();
+    program_.clear();
 }

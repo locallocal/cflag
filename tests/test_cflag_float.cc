@@ -74,3 +74,13 @@ TEST(test_float, test_float_invalid) {
     arguments.push_back("--test=hello");
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
+
+TEST(test_float, test_rejects_trailing_characters) {
+    float result = 0.0;
+    std::vector<std::string> arguments{"test-float", "--test=1.5px"};
+
+    cflag::reset();
+    cflag::float_var(&result, "test", 0.0, "test invalid float value.");
+
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
+}

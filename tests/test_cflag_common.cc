@@ -110,3 +110,70 @@ TEST(test_common, test_null_args) {
     std::vector<std::string> &args = cflag::args();
     EXPECT_EQ(0, args.size());
 }
+
+TEST(test_common, test_empty_argument_list) {
+    std::vector<std::string> arguments;
+
+    cflag::reset();
+    cflag::parse(arguments);
+
+    EXPECT_TRUE(cflag::args().empty());
+}
+
+TEST(test_common, test_empty_and_single_dash_are_positional_args) {
+    std::vector<std::string> arguments{"test-args", "", "-"};
+
+    cflag::reset();
+    cflag::parse(arguments);
+
+    ASSERT_EQ(2, cflag::args().size());
+    EXPECT_EQ("", cflag::args()[0]);
+    EXPECT_EQ("-", cflag::args()[1]);
+}
+
+TEST(test_common, test_parse_replaces_positional_args) {
+    std::vector<std::string> first_arguments{"test-args", "first"};
+    std::vector<std::string> second_arguments{"test-args", "second"};
+
+    cflag::reset();
+    cflag::parse(first_arguments);
+    cflag::parse(second_arguments);
+
+    ASSERT_EQ(1, cflag::args().size());
+    EXPECT_EQ("second", cflag::args()[0]);
+}
+
+TEST(test_common, test_short_flag_requires_value) {
+    int result = 0;
+    std::vector<std::string> arguments{"test-args", "-t"};
+
+    cflag::reset();
+    cflag::int_varp(&result, "test", "t", 0, "test missing value.");
+
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*set flag.*value.*");
+}
+
+TEST(test_common, test_long_and_short_names_have_separate_lookups) {
+    bool long_result = false;
+    bool short_result = false;
+    std::vector<std::string> arguments{"test-args", "--t", "-t"};
+
+    cflag::reset();
+    cflag::bool_var(&long_result, "t", false, "long flag.");
+    cflag::bool_varp(&short_result, "test", "t", false, "short flag.");
+    cflag::parse(arguments);
+
+    EXPECT_TRUE(long_result);
+    EXPECT_TRUE(short_result);
+}
+
+TEST(test_common, test_rejects_multi_character_short_name) {
+    bool result = false;
+
+    cflag::reset();
+
+    EXPECT_EXIT(
+            cflag::bool_varp(&result, "test", "tt", false, "invalid short flag."),
+            testing::ExitedWithCode(EXIT_FAILURE),
+            ".*one character.*");
+}

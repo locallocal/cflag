@@ -14,11 +14,20 @@
 
 #include "int.h"
 
+#include <stdexcept>
+
 bool cflag::c_int_value::set(std::string &value) {
     try {
-        *arg_ = std::stoi(value, nullptr);
+        std::size_t parsed_length = 0;
+        const int parsed_value = std::stoi(value, &parsed_length);
+        if (parsed_length != value.size()) {
+            return false;
+        }
+        *arg_ = parsed_value;
         return true;
-    } catch (...) {
+    } catch (const std::invalid_argument &) {
+        return false;
+    } catch (const std::out_of_range &) {
         return false;
     }
 }

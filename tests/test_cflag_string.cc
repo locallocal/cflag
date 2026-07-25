@@ -57,3 +57,14 @@ TEST(test_string, test_short_args_mixed_string) {
     cflag::parse(arguments);
     EXPECT_STREQ(expect.c_str(), result.c_str());
 }
+
+TEST(test_string, test_long_args_empty_string) {
+    std::string result = "not empty";
+    std::vector<std::string> arguments{"test-string", "--test="};
+
+    cflag::reset();
+    cflag::string_var(&result, "test", "default", "test empty string.");
+    cflag::parse(arguments);
+
+    EXPECT_TRUE(result.empty());
+}

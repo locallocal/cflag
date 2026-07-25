@@ -1,47 +1,45 @@
-# cmake version
-cmake_minimum_required(VERSION 2.8)
-# project
-project(cflag)
+cmake_minimum_required(VERSION 3.10)
+project(cflag LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS_DEBUG_INIT "-std=c++11 -g -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELEASE_INIT "-std=c++11 -g -O2")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
 
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE release)
-endif()
-if (${CMAKE_BUILD_TYPE} STREQUAL debug)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# add resources
-aux_source_directory(./src dir_srcs)
+option(CFLAG_BUILD_TESTS "Build the cflag test suite" OFF)
+option(CFLAG_ENABLE_COVERAGE "Enable GCC/Clang coverage instrumentation" OFF)
 
-#include directorys
-include_directories(./include)
+add_library(cflag STATIC
+    src/bool.cc
+    src/cflag.cc
+    src/float.cc
+    src/int.cc
+    src/string.cc
+)
+target_include_directories(cflag PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include>"
+)
 
-# shared library
-# add_library(cflag SHARED "${dir_srcs}")
+if (CFLAG_ENABLE_COVERAGE)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(cflag PRIVATE --coverage -fno-omit-frame-pointer)
+        target_link_libraries(cflag PUBLIC --coverage)
+    else()
+        message(FATAL_ERROR "Coverage is only supported with GCC or Clang")
+    endif()
+endif()
 
-# static library
-add_library(cflag STATIC "${dir_srcs}")
+add_executable(example example/example.cc)
+target_link_libraries(example PRIVATE cflag)
 
-# build example
-# add resrouces
-aux_source_directory(./example example_srcs)
-
-# build example
-add_executable(example "${example_srcs}")
-
-# link_directories("${CMAKE_BINARY_DIR}/lib")
-
-target_link_libraries(example cflag)
-
-if (${CMAKE_BUILD_TYPE} STREQUAL debug)
+if (CFLAG_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
-
 

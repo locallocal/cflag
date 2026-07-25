@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <string>
+#include <cstddef>
 #include <map>
-#include <vector>
 #include <memory>
-#include <iostream>
+#include <string>
+#include <vector>
 
 namespace cflag {
     class c_flag_set;
@@ -31,9 +31,9 @@ namespace cflag {
     extern const std::string k_float_type_name;
     extern const std::string k_string_type_name;
     extern std::shared_ptr<c_flag_set> g_flag_set;
-    const std::string k_help_flag_name = "help";
-    const std::string k_help_short_flag_name = "h";
-    const std::string k_global_flag_set_name = "global";
+    extern const std::string k_help_flag_name;
+    extern const std::string k_help_short_flag_name;
+    extern const std::string k_global_flag_set_name;
 
     // bool value
     void bool_var(bool *arg, const char *name, bool default_value, const char *usage);
@@ -69,16 +69,17 @@ namespace cflag {
 
     class c_flag_set {
     public:
-        c_flag_set(std::string &name) { name_ = name; }
+        explicit c_flag_set(const std::string &name) : name_(name) {}
         c_flag_set(const c_flag_set &other) = delete;
-        c_flag_set(const c_flag_set &&other) = delete;
+        c_flag_set(c_flag_set &&other) = delete;
         c_flag_set &operator=(const c_flag_set &other) = delete;
+        c_flag_set &operator=(c_flag_set &&other) = delete;
         ~c_flag_set() = default;
 
         void usage();
         void print_flags();
         void parse(int argc, char *argv[]);
-        void parse(std::vector<std::string> &argumengs);
+        void parse(std::vector<std::string> &arguments);
         void reset();
 
         // bool value
@@ -108,16 +109,18 @@ namespace cflag {
                 std::string &usage);
 
     private:
-        std::shared_ptr<c_flag>lookup_(std::string &name);
-        void add_flag_(std::shared_ptr<c_flag> flag);
-        void parse_long_args_(std::string &seg, int &index, std::vector<std::string> &arguments);
-        void parse_short_args_(std::string &seg, int &index, std::vector<std::string> &arguments);
+        std::shared_ptr<c_flag> lookup_(const std::string &name, bool short_name) const;
+        void add_flag_(const std::shared_ptr<c_flag> &flag);
+        void parse_long_args_(const std::string &seg, std::size_t &index,
+                const std::vector<std::string> &arguments);
+        void parse_short_args_(const std::string &seg, std::size_t &index,
+                const std::vector<std::string> &arguments);
 
     public:
         // setter
         void program(const std::string &value) { program_ = value; }
         // getter
-        std::string program() { return program_; }
+        const std::string &program() const { return program_; }
         std::vector<std::string> &args() { return args_; }
 
     private:
@@ -131,21 +134,21 @@ namespace cflag {
 
     class c_flag {
     public:
-        c_flag(std::string &name) { name_ = name; }
+        explicit c_flag(const std::string &name) : name_(name) {}
         ~c_flag() = default;
 
     public:
         // setter
-        void short_name(std::string &short_name) { short_name_ = short_name; }
-        void usage(std::string &usage) { usage_ = usage; }
-        void default_value(std::string &default_value) { default_value_ = default_value; }
-        void value(std::shared_ptr<i_value> value) { value_ = value; }
+        void short_name(const std::string &short_name) { short_name_ = short_name; }
+        void usage(const std::string &usage) { usage_ = usage; }
+        void default_value(const std::string &default_value) { default_value_ = default_value; }
+        void value(const std::shared_ptr<i_value> &value) { value_ = value; }
         // getter
-        std::string name() { return name_; }
-        std::string usage() { return usage_; }
-        std::string short_name() { return short_name_; }
-        std::string default_value() { return default_value_; }
-        std::shared_ptr<i_value> value() { return value_; }
+        const std::string &name() const { return name_; }
+        const std::string &usage() const { return usage_; }
+        const std::string &short_name() const { return short_name_; }
+        const std::string &default_value() const { return default_value_; }
+        const std::shared_ptr<i_value> &value() const { return value_; }
 
     private:
         std::string name_;
@@ -158,10 +161,9 @@ namespace cflag {
 
     class i_value {
     public:
+        virtual ~i_value() = default;
         virtual bool set(std::string &value) = 0;
         virtual const std::string &type() = 0;
     }; // class i_value
 
 } // namespace cflag
-
-
