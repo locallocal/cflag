@@ -1,107 +1,209 @@
 # cflag
-cflag is a C++11 header-only command-line flag library. It provides template-based
-registration, built-in support for `bool`, `int`, `float`, and `std::string`, and
-an extension point for custom types.
 
-## 1.How to use
+[简体中文](docs/README.zh-CN.md)
 
-```c++
+`cflag` is a C++11 header-only library for defining and parsing command-line
+flags. Its template API supports `bool`, `int`, `float`, and `std::string`
+out of the box, while `flag_traits<T>` makes custom flag types possible.
+
+## Features
+
+- Header-only: include `cflag.h`; no compiled library is required.
+- Type-safe registration through `var<T>` and `varp<T>`.
+- Long flags, short flags, combined Boolean short flags, and positional
+  arguments.
+- Strict value validation: malformed or partially parsed values are rejected.
+- Extensible conversion through `flag_traits<T>`.
+- C++11-compatible global state shared safely across translation units.
+- Compatibility wrappers for the earlier type-specific API.
+
+## Requirements
+
+- A C++11-compatible compiler.
+- CMake 3.10 or newer when using the provided CMake target.
+- GoogleTest to build the test suite.
+- `lcov` and `genhtml` to generate a coverage report.
+
+## Quick start
+
+```cpp
 #include "cflag.h"
 
 #include <iostream>
+#include <string>
 
 int main(int argc, char *argv[]) {
-    int port = 0;
     bool daemon = false;
-    bool version = false;
-    float point = 0.0;
-    std::string ip;
-    std::string conf_file;
+    int port = 0;
+    float load_limit = 0.0f;
+    std::string config;
 
-    cflag::varp(&daemon, "daemon", "d", false, "run with daemonize.");
-    cflag::varp(&version, "version", "v", false, "show server version.");
-    cflag::varp(&port, "port", "p", 9999, "server tcp port.");
-    cflag::varp(&point, "point", "k", 0.0f, "percent of usage.");
-    cflag::varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
-    cflag::var(&ip, "ip", "0.0.0.0", "server ip address.");
+    cflag::varp(&daemon, "daemon", "d", false, "run as a daemon.");
+    cflag::varp(&port, "port", "p", 8080, "server port.");
+    cflag::var(&load_limit, "load-limit", 0.75f, "maximum load.");
+    cflag::varp(
+            &config,
+            "config",
+            "c",
+            "./config.conf",
+            "configuration file.");
+
     cflag::parse(argc, argv);
 
-    std::cout << "daemon: " << std::boolalpha << daemon << std::endl;
-    std::cout << "port: " << port << std::endl;
-    std::cout << "point: " << point << std::endl;
-    std::cout << "conf_file: " << conf_file << std::endl;
-    return 0;
+    std::cout << "daemon: " << std::boolalpha << daemon << '\n'
+              << "port: " << port << '\n'
+              << "load limit: " << load_limit << '\n'
+              << "config: " << config << '\n';
 }
 ```
 
-Only `include/cflag.h` is required. The example can be compiled directly:
+Compile it directly; only the include directory is needed:
 
 ```shell
 c++ -std=c++11 -Iinclude example/example.cc -o example
 ```
 
-Run the CMake-built example:
+Example invocations:
 
 ```shell
-# ./build/bin/example --help
-Usage: ./build/bin/example [options]
-
- -c  --config[string]	config file of example.(./config.conf)
- -d  --daemon[bool]	run with daemonize.(false)
-     --ip[string]	server ip address.(0.0.0.0)
- -k  --point[float]	percent of usage.(0.000000)
- -p  --port[int]	server tcp port.(9999)
- -v  --version[bool]	show server version.(false)
+./example --port=9000 --daemon
+./example --port 9000 --config ./server.conf
+./example -dp9000 -c./server.conf
+./example --port=9000 -- input.txt --literal-argument
 ```
 
-## 2.How to build
+`--help` and `-h` are built in:
 
-The CMake target is an interface library and can be consumed as `cflag::cflag`.
+```text
+Usage: ./example [options]
+
+ -c  --config[string] configuration file.(./config.conf)
+ -d  --daemon[bool]   run as a daemon.(false)
+     --load-limit[float] maximum load.(0.750000)
+ -p  --port[int]      server port.(8080)
+```
+
+## Flag syntax
+
+| Form | Example | Notes |
+| --- | --- | --- |
+| Long Boolean | `--daemon` | Sets the value to `true`. |
+| Long inline value | `--port=9000` | Supported by every registered type. |
+| Long separate value | `--port 9000` | Used by non-Boolean flags. |
+| Short Boolean | `-d` | Sets the value to `true`. |
+| Combined short Booleans | `-dv` | Equivalent to `-d -v`. |
+| Short inline value | `-p9000` | The remainder is the value. |
+| Short separate value | `-p 9000` | Consumes the next argument. |
+| End of flags | `--` | Every following argument is positional. |
+
+Explicit Boolean values use the long inline form. Accepted true values are
+`TRUE`, `True`, `T`, `true`, `t`, and `1`; accepted false values are `FALSE`,
+`False`, `F`, `false`, `f`, and `0`.
+
+A single `-` is treated as a positional argument. Parsed positional arguments
+are available from `cflag::args()`.
+
+Short names must contain exactly one character. `help` and `h` are reserved
+for the built-in help flags. Duplicate names, unknown flags, missing values,
+and invalid values are reported to standard error and terminate parsing with
+`EXIT_FAILURE`.
+
+## Integration
+
+### Copy the header
+
+Copy [`include/cflag.h`](include/cflag.h) into your include path and include it:
+
+```cpp
+#include "cflag.h"
+```
+
+### CMake
+
+When the repository is available as a subdirectory:
 
 ```cmake
-add_subdirectory(cflag)
+add_subdirectory(path/to/cflag)
 target_link_libraries(your_target PRIVATE cflag::cflag)
 ```
 
-- build release or debug
+`cflag::cflag` is an `INTERFACE` target. It adds the include directory and the
+C++11 compile requirement but does not link a binary library. When `cflag` is
+included as a subproject, the example is disabled by default.
+
+Available CMake options:
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `CFLAG_BUILD_EXAMPLE` | On for top-level builds | Build the example program. |
+| `CFLAG_BUILD_TESTS` | Off | Build the GoogleTest test suite. |
+| `CFLAG_ENABLE_COVERAGE` | Off | Enable GCC/Clang coverage instrumentation. |
+
+## API
+
+### Register flags
+
+```cpp
+template <typename T>
+void cflag::var(
+        T *target,
+        const std::string &name,
+        const T &default_value,
+        const std::string &usage);
+
+template <typename T>
+void cflag::varp(
+        T *target,
+        const std::string &name,
+        const std::string &short_name,
+        const T &default_value,
+        const std::string &usage);
 ```
-# ./build.sh
-# ./build.sh --debug
+
+`var` registers a long flag. `varp` also assigns a one-character short name.
+The target receives the default value during registration and the parsed value
+during `parse`.
+
+The target pointer must remain valid until the flag set is reset or is no
+longer used.
+
+The following compatibility wrappers remain available:
+
+- `bool_var` and `bool_varp`
+- `int_var` and `int_varp`
+- `float_var` and `float_varp`
+- `string_var` and `string_varp`
+
+### Parse and inspect arguments
+
+```cpp
+void cflag::parse(int argc, char *argv[]);
+void cflag::parse(const std::vector<std::string> &arguments);
+std::vector<std::string> &cflag::args();
+void cflag::usage();
+void cflag::reset();
 ```
 
-- build and run tests (GoogleTest is required).
-```
-# ./build.sh --test
-```
+`parse` updates registered targets and replaces the stored positional
+arguments. `reset` removes every registration, positional argument, and stored
+program name. Register flags again after calling it.
 
-- build, run tests, and generate a source coverage report (lcov is required).
-```
-# ./build.sh --cov
-```
+Registration and parsing mutate the flag set; perform them before sharing
+results with worker threads.
 
-- clean directory.
-```
-# ./build.sh --clean
-```
+### Custom types
 
-## 3.API
+Specialize `cflag::flag_traits<T>` to define a display name, default-value
+formatting, parsing, and whether a flag supports an implicit value:
 
-### 3.1 Template registration
-
-- `var<T>(T *target, name, default_value, usage)`
-- `varp<T>(T *target, name, short_name, default_value, usage)`
-
-The earlier `bool_var`, `int_var`, `float_var`, and `string_var` APIs remain
-available as compatibility wrappers.
-
-### 3.2 Custom types
-
-Custom flag types are supported by specializing `cflag::flag_traits<T>`:
-
-```c++
-enum class mode { safe, fast };
+```cpp
+enum class mode {
+    safe,
+    fast,
+};
 
 namespace cflag {
+
 template <>
 struct flag_traits<mode> {
     static const std::string &type_name() {
@@ -129,12 +231,44 @@ struct flag_traits<mode> {
         return false;
     }
 };
+
 } // namespace cflag
 ```
 
-### 3.3 Parsing
+The type can then be registered normally:
 
-- `parse(int argc, char *argv[])`
-- `parse(const std::vector<std::string> &arguments)`
-- `reset()`
-- `args()`
+```cpp
+mode execution_mode = mode::safe;
+cflag::var(
+        &execution_mode,
+        "mode",
+        mode::safe,
+        "execution mode.");
+```
+
+`parse` should only update its output parameter when conversion succeeds.
+Return `false` to reject a value.
+
+## Build and test
+
+The helper script configures and builds the appropriate CMake targets:
+
+```shell
+./build.sh             # Release example
+./build.sh --debug     # Debug example
+./build.sh --test      # Build and run tests
+./build.sh --cov       # Tests and HTML coverage report in cov/
+./build.sh --clean     # Remove build/ and cov/
+```
+
+Without the helper script:
+
+```shell
+cmake -S . -B build -DCFLAG_BUILD_EXAMPLE=ON
+cmake --build build
+./build/bin/example --help
+```
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
