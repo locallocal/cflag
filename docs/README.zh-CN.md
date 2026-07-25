@@ -3,13 +3,15 @@
 [English](../README.md)
 
 `cflag` 是一个基于 C++11 的 header-only 命令行参数库。它通过模板 API
-原生支持 `bool`、`int`、`float` 和 `std::string`，也可以通过
+原生支持布尔值、固定宽度整数、浮点数和字符串，也可以通过
 `flag_traits<T>` 扩展自定义参数类型。
 
 ## 特性
 
 - 仅需包含 `cflag.h`，无需编译或链接二进制库。
 - 使用 `var<T>` 和 `varp<T>` 进行类型安全的参数注册。
+- 原生支持 `bool`、`int`、`std::uint32_t`、`std::int32_t`、
+  `std::uint64_t`、`std::int64_t`、`float` 和 `std::string`。
 - 支持长选项、短选项、布尔短选项组合及位置参数。
 - 严格校验参数值，拒绝非法值和仅部分转换成功的值。
 - 通过 `flag_traits<T>` 扩展自定义类型。
@@ -161,6 +163,23 @@ void cflag::varp(
 目标变量，调用 `parse` 后会写入解析得到的值。
 
 目标指针必须保持有效，直到参数集合被重置或不再使用。
+
+### 内置类型
+
+| C++ 类型 | 帮助信息标签 | 可接受的值 |
+| --- | --- | --- |
+| `bool` | `bool` | 文档列出的布尔值写法 |
+| `int` | `int` | 平台 `int` 范围内的十进制整数 |
+| `std::int32_t` | `int32` 或 `int` | 精确 32 位有符号范围内的十进制整数 |
+| `std::uint32_t` | `uint32` | 从 `0` 到 `UINT32_MAX` 的十进制整数 |
+| `std::int64_t` | `int64` 或 `int` | 精确 64 位有符号范围内的十进制整数 |
+| `std::uint64_t` | `uint64` | 从 `0` 到 `UINT64_MAX` 的十进制整数 |
+| `float` | `float` | 可被 `std::stof` 完整解析的值 |
+| `std::string` | `string` | 任意字符串，包括显式传入的空字符串 |
+
+声明固定宽度整数变量时需要包含 `<cstdint>`。如果某个固定宽度有符号类型
+是 `int` 的 typedef，C++ 会将两者视为同一类型，因此帮助信息仍显示
+`int`；解析范围仍以目标类型的 `std::numeric_limits` 为准。
 
 ### 解析和读取位置参数
 
