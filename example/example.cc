@@ -24,12 +24,12 @@ int main(int argc, char *argv[]) {
     std::string ip;
     std::string conf_file;
 
-    cflag::bool_varp(&daemon, "daemon", "d", false, "run with daemonize.");
-    cflag::bool_varp(&version, "version", "v", false, "show server version.");
-    cflag::int_varp(&port, "port", "p", 9999, "server tcp port.");
-    cflag::float_varp(&point, "point", "k", 0.0, "percent of usage.");
-    cflag::string_varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
-    cflag::string_var(&ip, "ip", "0.0.0.0", "server ip address.");
+    cflag::varp(&daemon, "daemon", "d", false, "run with daemonize.");
+    cflag::varp(&version, "version", "v", false, "show server version.");
+    cflag::varp(&port, "port", "p", 9999, "server tcp port.");
+    cflag::varp(&point, "point", "k", 0.0f, "percent of usage.");
+    cflag::varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
+    cflag::var(&ip, "ip", "0.0.0.0", "server ip address.");
     cflag::parse(argc, argv);
 
     std::cout << "daemon: " << std::boolalpha << daemon << std::endl;

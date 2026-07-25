@@ -13,6 +13,7 @@ function configure_and_build {
 function build_release {
     configure_and_build \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCFLAG_BUILD_EXAMPLE=ON \
         -DCFLAG_BUILD_TESTS=OFF \
         -DCFLAG_ENABLE_COVERAGE=OFF
 }
@@ -20,6 +21,7 @@ function build_release {
 function build_debug {
     configure_and_build \
         -DCMAKE_BUILD_TYPE=Debug \
+        -DCFLAG_BUILD_EXAMPLE=ON \
         -DCFLAG_BUILD_TESTS=OFF \
         -DCFLAG_ENABLE_COVERAGE=OFF
 }
@@ -27,6 +29,7 @@ function build_debug {
 function run_tests {
     configure_and_build \
         -DCMAKE_BUILD_TYPE=Debug \
+        -DCFLAG_BUILD_EXAMPLE=OFF \
         -DCFLAG_BUILD_TESTS=ON \
         -DCFLAG_ENABLE_COVERAGE=OFF
     ctest --test-dir "${BUILD_DIR}" --output-on-failure
@@ -40,6 +43,7 @@ function run_coverage {
 
     configure_and_build \
         -DCMAKE_BUILD_TYPE=Debug \
+        -DCFLAG_BUILD_EXAMPLE=OFF \
         -DCFLAG_BUILD_TESTS=ON \
         -DCFLAG_ENABLE_COVERAGE=ON
     ctest --test-dir "${BUILD_DIR}" --output-on-failure
