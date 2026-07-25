@@ -21,7 +21,7 @@ TEST(test_string, test_long_args_string) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::string_var(&result, "test", "", "test string.");
+    cflag::var(&result, "test", "", "test string.");
     arguments.clear();
     arguments.push_back("test-string");
     arguments.push_back("--test=hello");
@@ -35,7 +35,7 @@ TEST(test_string, test_short_args_string) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::string_varp(&result, "test", "t", "", "test string.");
+    cflag::varp(&result, "test", "t", "", "test string.");
     arguments.clear();
     arguments.push_back("test-string");
     arguments.push_back("-t");
@@ -50,7 +50,7 @@ TEST(test_string, test_short_args_mixed_string) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::string_varp(&result, "test", "t", "", "test string.");
+    cflag::varp(&result, "test", "t", "", "test string.");
     arguments.clear();
     arguments.push_back("test-string");
     arguments.push_back("-thello");
@@ -63,7 +63,7 @@ TEST(test_string, test_long_args_empty_string) {
     std::vector<std::string> arguments{"test-string", "--test="};
 
     cflag::reset();
-    cflag::string_var(&result, "test", "default", "test empty string.");
+    cflag::var(&result, "test", "default", "test empty string.");
     cflag::parse(arguments);
 
     EXPECT_TRUE(result.empty());

@@ -20,7 +20,7 @@ TEST(test_int, test_long_args_positive_int) {
     std::vector<std::string> arguments;
     
     cflag::reset();
-    cflag::int_var(&result, "test", 0, "test int.");
+    cflag::var(&result, "test", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("--test=1");
@@ -33,7 +33,7 @@ TEST(test_int, test_long_args_negative_int) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_var(&result, "test", 0, "test int.");
+    cflag::var(&result, "test", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("--test=-1");
@@ -46,7 +46,7 @@ TEST(test_int, test_long_args_separate_value) {
     std::vector<std::string> arguments{"test-int", "--test", "42"};
 
     cflag::reset();
-    cflag::int_var(&result, "test", 0, "test int.");
+    cflag::var(&result, "test", 0, "test int.");
     cflag::parse(arguments);
 
     EXPECT_EQ(42, result);
@@ -57,7 +57,7 @@ TEST(test_int, test_short_args_positive_int) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_varp(&result, "test", "t", 0, "test int.");
+    cflag::varp(&result, "test", "t", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("-t");
@@ -71,7 +71,7 @@ TEST(test_int, test_short_args_negtive_int) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_varp(&result, "test", "t", 0, "test int.");
+    cflag::varp(&result, "test", "t", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("-t");
@@ -85,7 +85,7 @@ TEST(test_int, test_short_args_positive_int_mixed) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_varp(&result, "test", "t", 0, "test int.");
+    cflag::varp(&result, "test", "t", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("-t1");
@@ -98,7 +98,7 @@ TEST(test_int, test_short_args_negative_int_mixed) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_varp(&result, "test", "t", 0, "test int.");
+    cflag::varp(&result, "test", "t", 0, "test int.");
     arguments.clear();
     arguments.push_back("test-int");
     arguments.push_back("-t-1");
@@ -111,7 +111,7 @@ TEST(test_int, test_invalid) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::int_var(&result, "test", 0, "test invalid int value.");
+    cflag::var(&result, "test", 0, "test invalid int value.");
     arguments.push_back("test-int");
     arguments.push_back("--test=invalid");
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
@@ -122,7 +122,7 @@ TEST(test_int, test_rejects_trailing_characters) {
     std::vector<std::string> arguments{"test-int", "--test=12px"};
 
     cflag::reset();
-    cflag::int_var(&result, "test", 0, "test invalid int value.");
+    cflag::var(&result, "test", 0, "test invalid int value.");
 
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }

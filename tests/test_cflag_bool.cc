@@ -23,7 +23,7 @@ TEST(test_bool, test_long_args_true) {
     for (auto &it : true_values) {
         cflag::reset();
         result = false;
-        cflag::bool_var(&result, "test", false, "test true.");
+        cflag::var(&result, "test", false, "test true.");
         arguments.clear();
         arguments.push_back("test-true");
         std::string temp = "--test=" + it;
@@ -41,7 +41,7 @@ TEST(test_bool, test_long_args_false) {
     for (auto &it : true_values) {
         cflag::reset();
         result = true;
-        cflag::bool_var(&result, "test", false, "test false.");
+        cflag::var(&result, "test", false, "test false.");
         arguments.clear();
         arguments.push_back("test-false");
         std::string temp = "--test=" + it;
@@ -56,7 +56,7 @@ TEST(test_bool, test_long_args_default_true) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result, "test", false, "test true.");
+    cflag::var(&result, "test", false, "test true.");
     arguments.push_back("test-false");
     arguments.push_back("--test");
     cflag::parse(arguments);
@@ -68,7 +68,7 @@ TEST(test_bool, test_short_args_default_true) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_varp(&result, "test", "t", false, "test true.");
+    cflag::varp(&result, "test", "t", false, "test true.");
     arguments.push_back("test-true");
     std::string temp = "-t";
     arguments.push_back(temp);
@@ -82,8 +82,8 @@ TEST(test_bool, test_short_args_mixed) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_varp(&result_00, "test00", "t", false, "test mixed.");
-    cflag::bool_varp(&result_01, "test01", "u", false, "test mixed.");
+    cflag::varp(&result_00, "test00", "t", false, "test mixed.");
+    cflag::varp(&result_01, "test01", "u", false, "test mixed.");
     arguments.clear();
     arguments.push_back("test-mixed");
     arguments.push_back("-tu");
@@ -97,7 +97,7 @@ TEST(test_bool, test_invalid) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result, "test", false, "test invalid bool value.");
+    cflag::var(&result, "test", false, "test invalid bool value.");
     arguments.clear();
     arguments.push_back("test-invalid");
     arguments.push_back("--test=invalid");
