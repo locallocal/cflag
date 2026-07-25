@@ -15,8 +15,10 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -39,6 +41,26 @@ inline const std::string &bool_type_name() {
 
 inline const std::string &int_type_name() {
     static const std::string value = "int";
+    return value;
+}
+
+inline const std::string &int32_type_name() {
+    static const std::string value = "int32";
+    return value;
+}
+
+inline const std::string &uint32_type_name() {
+    static const std::string value = "uint32";
+    return value;
+}
+
+inline const std::string &int64_type_name() {
+    static const std::string value = "int64";
+    return value;
+}
+
+inline const std::string &uint64_type_name() {
+    static const std::string value = "uint64";
     return value;
 }
 
@@ -70,6 +92,16 @@ struct type_identity {
     typedef T type;
 };
 
+template <typename T>
+struct is_supported_integer
+    : std::integral_constant<
+              bool,
+              std::is_same<T, int>::value ||
+                      std::is_same<T, std::int32_t>::value ||
+                      std::is_same<T, std::uint32_t>::value ||
+                      std::is_same<T, std::int64_t>::value ||
+                      std::is_same<T, std::uint64_t>::value> {};
+
 [[noreturn]] inline void fail(const std::string &message) {
     std::cerr << message << '\n';
     std::exit(EXIT_FAILURE);
@@ -78,7 +110,7 @@ struct type_identity {
 } // namespace detail
 
 // Specialize flag_traits for a custom type to use it with var<T>/varp<T>.
-template <typename T>
+template <typename T, typename Enable = void>
 struct flag_traits {
     static_assert(
             detail::dependent_false<T>::value,
@@ -114,24 +146,57 @@ struct flag_traits<bool> {
     }
 };
 
-template <>
-struct flag_traits<int> {
+template <typename T>
+struct flag_traits<
+        T,
+        typename std::enable_if<detail::is_supported_integer<T>::value>::type> {
     static const std::string &type_name() {
-        return detail::int_type_name();
+        if (std::is_same<T, int>::value) {
+            return detail::int_type_name();
+        }
+        if (std::is_same<T, std::int32_t>::value) {
+            return detail::int32_type_name();
+        }
+        if (std::is_same<T, std::uint32_t>::value) {
+            return detail::uint32_type_name();
+        }
+        if (std::is_same<T, std::int64_t>::value) {
+            return detail::int64_type_name();
+        }
+        return detail::uint64_type_name();
     }
 
-    static std::string format(int value) {
+    static std::string format(T value) {
         return std::to_string(value);
     }
 
-    static bool parse(const std::string &value, int &output) {
+    static bool parse(const std::string &value, T &output) {
+        return parse_value(
+                value,
+                output,
+                std::integral_constant<bool, std::numeric_limits<T>::is_signed>());
+    }
+
+    static bool has_implicit_value() {
+        return false;
+    }
+
+private:
+    static bool parse_value(
+            const std::string &value,
+            T &output,
+            std::true_type) {
         try {
             std::size_t parsed_length = 0;
-            const int parsed_value = std::stoi(value, &parsed_length);
+            const long long parsed_value = std::stoll(value, &parsed_length);
             if (parsed_length != value.size()) {
                 return false;
             }
-            output = parsed_value;
+            if (parsed_value < static_cast<long long>(std::numeric_limits<T>::min()) ||
+                    parsed_value > static_cast<long long>(std::numeric_limits<T>::max())) {
+                return false;
+            }
+            output = static_cast<T>(parsed_value);
             return true;
         } catch (const std::invalid_argument &) {
             return false;
@@ -140,8 +205,34 @@ struct flag_traits<int> {
         }
     }
 
-    static bool has_implicit_value() {
-        return false;
+    static bool parse_value(
+            const std::string &value,
+            T &output,
+            std::false_type) {
+        const std::size_t first_character =
+                value.find_first_not_of(" \t\n\r\f\v");
+        if (first_character == std::string::npos || value[first_character] == '-') {
+            return false;
+        }
+
+        try {
+            std::size_t parsed_length = 0;
+            const unsigned long long parsed_value =
+                    std::stoull(value, &parsed_length);
+            if (parsed_length != value.size()) {
+                return false;
+            }
+            if (parsed_value >
+                    static_cast<unsigned long long>(std::numeric_limits<T>::max())) {
+                return false;
+            }
+            output = static_cast<T>(parsed_value);
+            return true;
+        } catch (const std::invalid_argument &) {
+            return false;
+        } catch (const std::out_of_range &) {
+            return false;
+        }
     }
 };
 

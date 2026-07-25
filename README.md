@@ -3,13 +3,16 @@
 [简体中文](docs/README.zh-CN.md)
 
 `cflag` is a C++11 header-only library for defining and parsing command-line
-flags. Its template API supports `bool`, `int`, `float`, and `std::string`
-out of the box, while `flag_traits<T>` makes custom flag types possible.
+flags. Its template API supports Boolean, fixed-width integer, floating-point,
+and string flags out of the box, while `flag_traits<T>` makes custom flag types
+possible.
 
 ## Features
 
 - Header-only: include `cflag.h`; no compiled library is required.
 - Type-safe registration through `var<T>` and `varp<T>`.
+- Built-in support for `bool`, `int`, `std::uint32_t`, `std::int32_t`,
+  `std::uint64_t`, `std::int64_t`, `float`, and `std::string`.
 - Long flags, short flags, combined Boolean short flags, and positional
   arguments.
 - Strict value validation: malformed or partially parsed values are rejected.
@@ -165,6 +168,24 @@ during `parse`.
 
 The target pointer must remain valid until the flag set is reset or is no
 longer used.
+
+### Built-in types
+
+| C++ type | Help label | Accepted value |
+| --- | --- | --- |
+| `bool` | `bool` | Documented Boolean spellings |
+| `int` | `int` | Decimal value within the platform `int` range |
+| `std::int32_t` | `int32` or `int` | Decimal value within the exact 32-bit signed range |
+| `std::uint32_t` | `uint32` | Decimal value from `0` through `UINT32_MAX` |
+| `std::int64_t` | `int64` or `int` | Decimal value within the exact 64-bit signed range |
+| `std::uint64_t` | `uint64` | Decimal value from `0` through `UINT64_MAX` |
+| `float` | `float` | A value fully accepted by `std::stof` |
+| `std::string` | `string` | Any string, including an explicit empty value |
+
+Include `<cstdint>` when declaring fixed-width variables. When a fixed-width
+signed type is a typedef of `int`, C++ treats both names as the same type, so
+the help label remains `int`. Parsing still uses the target type's
+`std::numeric_limits` bounds.
 
 ### Parse and inspect arguments
 
