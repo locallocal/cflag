@@ -62,11 +62,6 @@ inline const std::string &help_short_flag_name() {
     return value;
 }
 
-inline const std::string &global_flag_set_name() {
-    static const std::string value = "global";
-    return value;
-}
-
 template <typename>
 struct dependent_false : std::false_type {};
 
@@ -81,16 +76,6 @@ struct type_identity {
 }
 
 } // namespace detail
-
-// Kept as source-compatible aliases for the constants exposed by earlier
-// releases. The underlying strings are shared across translation units.
-static const std::string &k_bool_type_name = detail::bool_type_name();
-static const std::string &k_int_type_name = detail::int_type_name();
-static const std::string &k_float_type_name = detail::float_type_name();
-static const std::string &k_string_type_name = detail::string_type_name();
-static const std::string &k_help_flag_name = detail::help_flag_name();
-static const std::string &k_help_short_flag_name = detail::help_short_flag_name();
-static const std::string &k_global_flag_set_name = detail::global_flag_set_name();
 
 // Specialize flag_traits for a custom type to use it with var<T>/varp<T>.
 template <typename T>
@@ -298,7 +283,7 @@ private:
 
 class c_flag_set {
 public:
-    explicit c_flag_set(const std::string &name) : name_(name) {}
+    c_flag_set() = default;
     c_flag_set(const c_flag_set &) = delete;
     c_flag_set(c_flag_set &&) = delete;
     c_flag_set &operator=(const c_flag_set &) = delete;
@@ -308,9 +293,6 @@ public:
     void print_flags() const;
     void parse(int argc, char *argv[]);
     void parse(const std::vector<std::string> &arguments);
-    void parse(std::vector<std::string> &arguments) {
-        parse(static_cast<const std::vector<std::string> &>(arguments));
-    }
     void reset();
 
     template <typename T>
@@ -327,62 +309,6 @@ public:
             const std::string &short_name,
             const typename detail::type_identity<T>::type &default_value,
             const std::string &usage);
-
-    void bool_var(bool *arg, const std::string &name, bool default_value, const std::string &usage) {
-        var(arg, name, default_value, usage);
-    }
-
-    void bool_varp(
-            bool *arg,
-            const std::string &name,
-            const std::string &short_name,
-            bool default_value,
-            const std::string &usage) {
-        varp(arg, name, short_name, default_value, usage);
-    }
-
-    void int_var(int *arg, const std::string &name, int default_value, const std::string &usage) {
-        var(arg, name, default_value, usage);
-    }
-
-    void int_varp(
-            int *arg,
-            const std::string &name,
-            const std::string &short_name,
-            int default_value,
-            const std::string &usage) {
-        varp(arg, name, short_name, default_value, usage);
-    }
-
-    void float_var(float *arg, const std::string &name, float default_value, const std::string &usage) {
-        var(arg, name, default_value, usage);
-    }
-
-    void float_varp(
-            float *arg,
-            const std::string &name,
-            const std::string &short_name,
-            float default_value,
-            const std::string &usage) {
-        varp(arg, name, short_name, default_value, usage);
-    }
-
-    void string_var(
-            std::string *arg,
-            const std::string &name,
-            const std::string &default_value,
-            const std::string &usage) {
-        var(arg, name, default_value, usage);
-    }
-
-    void string_varp(
-            std::string *arg,
-            const std::string &name,
-            const std::string &short_name,
-            const std::string &default_value,
-            const std::string &usage) {
-        varp(arg, name, short_name, default_value, usage);
-    }
 
     void program(const std::string &value) {
         program_ = value;
@@ -412,7 +338,6 @@ private:
             std::size_t &index,
             const std::vector<std::string> &arguments);
 
-    std::string name_;
     std::string program_;
     std::map<std::string, std::shared_ptr<c_flag>> flags_;
     std::map<std::string, std::shared_ptr<c_flag>> short_flags_;
@@ -639,7 +564,7 @@ inline void c_flag_set::reset() {
 namespace detail {
 
 inline c_flag_set &global_flag_set_storage() {
-    static c_flag_set flag_set(global_flag_set_name());
+    static c_flag_set flag_set;
     return flag_set;
 }
 
@@ -669,84 +594,12 @@ inline void varp(
             arg, name, short_name, default_value, usage_text);
 }
 
-inline void bool_var(
-        bool *arg,
-        const std::string &name,
-        bool default_value,
-        const std::string &usage_text) {
-    var(arg, name, default_value, usage_text);
-}
-
-inline void bool_varp(
-        bool *arg,
-        const std::string &name,
-        const std::string &short_name,
-        bool default_value,
-        const std::string &usage_text) {
-    varp(arg, name, short_name, default_value, usage_text);
-}
-
-inline void int_var(
-        int *arg,
-        const std::string &name,
-        int default_value,
-        const std::string &usage_text) {
-    var(arg, name, default_value, usage_text);
-}
-
-inline void int_varp(
-        int *arg,
-        const std::string &name,
-        const std::string &short_name,
-        int default_value,
-        const std::string &usage_text) {
-    varp(arg, name, short_name, default_value, usage_text);
-}
-
-inline void float_var(
-        float *arg,
-        const std::string &name,
-        float default_value,
-        const std::string &usage_text) {
-    var(arg, name, default_value, usage_text);
-}
-
-inline void float_varp(
-        float *arg,
-        const std::string &name,
-        const std::string &short_name,
-        float default_value,
-        const std::string &usage_text) {
-    varp(arg, name, short_name, default_value, usage_text);
-}
-
-inline void string_var(
-        std::string *arg,
-        const std::string &name,
-        const std::string &default_value,
-        const std::string &usage_text) {
-    var(arg, name, default_value, usage_text);
-}
-
-inline void string_varp(
-        std::string *arg,
-        const std::string &name,
-        const std::string &short_name,
-        const std::string &default_value,
-        const std::string &usage_text) {
-    varp(arg, name, short_name, default_value, usage_text);
-}
-
 inline void parse(int argc, char *argv[]) {
     detail::global_flag_set_storage().parse(argc, argv);
 }
 
 inline void parse(const std::vector<std::string> &arguments) {
     detail::global_flag_set_storage().parse(arguments);
-}
-
-inline void parse(std::vector<std::string> &arguments) {
-    parse(static_cast<const std::vector<std::string> &>(arguments));
 }
 
 inline void reset() {

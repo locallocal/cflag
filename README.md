@@ -15,7 +15,6 @@ out of the box, while `flag_traits<T>` makes custom flag types possible.
 - Strict value validation: malformed or partially parsed values are rejected.
 - Extensible conversion through `flag_traits<T>`.
 - C++11-compatible global state shared safely across translation units.
-- Compatibility wrappers for the earlier type-specific API.
 
 ## Requirements
 
@@ -166,13 +165,6 @@ during `parse`.
 
 The target pointer must remain valid until the flag set is reset or is no
 longer used.
-
-The following compatibility wrappers remain available:
-
-- `bool_var` and `bool_varp`
-- `int_var` and `int_varp`
-- `float_var` and `float_varp`
-- `string_var` and `string_varp`
 
 ### Parse and inspect arguments
 

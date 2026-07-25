@@ -20,7 +20,7 @@ TEST(test_float, test_long_args_float) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::float_var(&result, "test", 0.0, "test float.");
+    cflag::var(&result, "test", 0.0, "test float.");
     arguments.clear();
     arguments.push_back("test-float");
     arguments.push_back("--test=1.999");
@@ -33,7 +33,7 @@ TEST(test_float, test_short_args_float) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::float_varp(&result, "test", "t", 0.0, "test float.");
+    cflag::varp(&result, "test", "t", 0.0, "test float.");
     arguments.clear();
     arguments.push_back("test-float");
     arguments.push_back("-t 1.999");
@@ -46,7 +46,7 @@ TEST(test_float, test_short_args_float_mixed) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::float_varp(&result, "test", "t", 0.0, "test float.");
+    cflag::varp(&result, "test", "t", 0.0, "test float.");
     arguments.clear();
     arguments.push_back("test-float");
     arguments.push_back("-t1.999");
@@ -59,7 +59,7 @@ TEST(test_float, test_float_default) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::float_var(&result, "test", 1.999, "test float.");
+    cflag::var(&result, "test", 1.999, "test float.");
     EXPECT_FLOAT_EQ(1.999f, result);
 }
 
@@ -68,7 +68,7 @@ TEST(test_float, test_float_invalid) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::float_var(&result, "test", 0.0, "test invalid float.");
+    cflag::var(&result, "test", 0.0, "test invalid float.");
     arguments.clear();
     arguments.push_back("test-float");
     arguments.push_back("--test=hello");
@@ -80,7 +80,7 @@ TEST(test_float, test_rejects_trailing_characters) {
     std::vector<std::string> arguments{"test-float", "--test=1.5px"};
 
     cflag::reset();
-    cflag::float_var(&result, "test", 0.0, "test invalid float value.");
+    cflag::var(&result, "test", 0.0, "test invalid float value.");
 
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }

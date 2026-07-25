@@ -20,7 +20,7 @@ TEST(test_common, test_usage) {
     std::vector<std::string> arguments;
     
     cflag::reset();
-    cflag::bool_varp(&result, "test", "t", true, "test usage.");
+    cflag::varp(&result, "test", "t", true, "test usage.");
     arguments.push_back("test-common");
     cflag::parse(arguments);
     cflag::usage();
@@ -33,8 +33,8 @@ TEST(test_common, test_terminat) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result_00, "test00", false, "first bool flag.");
-    cflag::bool_var(&result_01, "test01", false, "second bool flag.");
+    cflag::var(&result_00, "test00", false, "first bool flag.");
+    cflag::var(&result_01, "test01", false, "second bool flag.");
     arguments.clear();
     arguments.push_back("test-terminate");
     arguments.push_back("--test00=true");
@@ -53,7 +53,7 @@ TEST(test_common, test_exist_args) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result, "test", false, "test args.");
+    cflag::var(&result, "test", false, "test args.");
     arguments.clear();
     arguments.push_back("test-args");
     arguments.push_back("--test=true");
@@ -77,7 +77,7 @@ TEST(test_common, test_left_args) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result, "test", false, "test args.");
+    cflag::var(&result, "test", false, "test args.");
     arguments.clear();
     arguments.push_back("test-args");
     arguments.push_back("--test=true");
@@ -98,7 +98,7 @@ TEST(test_common, test_null_args) {
     std::vector<std::string> arguments;
 
     cflag::reset();
-    cflag::bool_var(&result, "test", false, "test args.");
+    cflag::var(&result, "test", false, "test args.");
     arguments.clear();
     arguments.push_back("test-args");
     arguments.push_back("--test=true");
@@ -148,7 +148,7 @@ TEST(test_common, test_short_flag_requires_value) {
     std::vector<std::string> arguments{"test-args", "-t"};
 
     cflag::reset();
-    cflag::int_varp(&result, "test", "t", 0, "test missing value.");
+    cflag::varp(&result, "test", "t", 0, "test missing value.");
 
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*set flag.*value.*");
 }
@@ -159,8 +159,8 @@ TEST(test_common, test_long_and_short_names_have_separate_lookups) {
     std::vector<std::string> arguments{"test-args", "--t", "-t"};
 
     cflag::reset();
-    cflag::bool_var(&long_result, "t", false, "long flag.");
-    cflag::bool_varp(&short_result, "test", "t", false, "short flag.");
+    cflag::var(&long_result, "t", false, "long flag.");
+    cflag::varp(&short_result, "test", "t", false, "short flag.");
     cflag::parse(arguments);
 
     EXPECT_TRUE(long_result);
@@ -173,7 +173,7 @@ TEST(test_common, test_rejects_multi_character_short_name) {
     cflag::reset();
 
     EXPECT_EXIT(
-            cflag::bool_varp(&result, "test", "tt", false, "invalid short flag."),
+            cflag::varp(&result, "test", "tt", false, "invalid short flag."),
             testing::ExitedWithCode(EXIT_FAILURE),
             ".*one character.*");
 }
