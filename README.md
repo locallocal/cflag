@@ -3,16 +3,19 @@
 [简体中文](docs/README.zh-CN.md)
 
 `cflag` is a C++11 header-only library for defining and parsing command-line
-flags. Its template API supports Boolean, fixed-width integer, floating-point,
-and string flags out of the box, while `flag_traits<T>` makes custom flag types
-possible.
+flags. Its template API supports every value-bearing C++11 fundamental type,
+fixed-width integer aliases, and strings out of the box, while
+`flag_traits<T>` makes custom flag types possible.
 
 ## Features
 
 - Header-only: include `cflag.h`; no compiled library is required.
 - Type-safe registration through `var<T>` and `varp<T>`.
-- Built-in support for `bool`, `int`, `std::uint32_t`, `std::int32_t`,
-  `std::uint64_t`, `std::int64_t`, `float`, and `std::string`.
+- Built-in support for all character, signed integer, unsigned integer, and
+  floating-point types, plus `bool`, `std::nullptr_t`, fixed-width integer
+  aliases, and `std::string`.
+- Conditional support for the C++20 `char8_t` type when compiling as C++20 or
+  newer.
 - Long flags, short flags, combined Boolean short flags, and positional
   arguments.
 - Strict value validation: malformed or partially parsed values are rejected.
@@ -174,18 +177,28 @@ longer used.
 | C++ type | Help label | Accepted value |
 | --- | --- | --- |
 | `bool` | `bool` | Documented Boolean spellings |
-| `int` | `int` | Decimal value within the platform `int` range |
-| `std::int32_t` | `int32` or `int` | Decimal value within the exact 32-bit signed range |
-| `std::uint32_t` | `uint32` | Decimal value from `0` through `UINT32_MAX` |
-| `std::int64_t` | `int64` or `int` | Decimal value within the exact 64-bit signed range |
-| `std::uint64_t` | `uint64` | Decimal value from `0` through `UINT64_MAX` |
-| `float` | `float` | A value fully accepted by `std::stof` |
+| `char`, `signed char`, `unsigned char` | Corresponding type name | Numeric code-unit value within the target type's range |
+| `wchar_t`, `char16_t`, `char32_t` | Corresponding type name | Numeric code-unit value within the target type's range |
+| `char8_t` (C++20) | `char8_t` | Numeric code-unit value within the target type's range |
+| `short`, `int`, `long`, `long long` | Corresponding type name | Decimal value within the target type's signed range |
+| Their unsigned variants | Corresponding type name | Decimal value from `0` through the target type's maximum |
+| Fixed-width integer aliases from `<cstdint>` | Underlying or fixed-width type name | Decimal value within the exact target range |
+| `float`, `double`, `long double` | Corresponding type name | A value fully accepted by `std::stof`, `std::stod`, or `std::stold` |
+| `std::nullptr_t` | `nullptr` | The exact text `nullptr` |
 | `std::string` | `string` | Any string, including an explicit empty value |
 
-Include `<cstdint>` when declaring fixed-width variables. When a fixed-width
-signed type is a typedef of `int`, C++ treats both names as the same type, so
-the help label remains `int`. Parsing still uses the target type's
+Character flags use numeric code-unit values; they do not decode a textual
+character or UTF encoding. For example, `--letter=65` stores the value
+represented by code unit 65 in a `char`.
+
+Include `<cstdint>` when declaring fixed-width variables. Fixed-width types are
+aliases of fundamental integer types, so C++ cannot always preserve the
+spelling used at registration. The help label may therefore show either the
+underlying type or a fixed-width name. Parsing always uses the target type's
 `std::numeric_limits` bounds.
+
+`void` is the only C++11 fundamental type that cannot be registered: C++ does
+not permit an object or flag target of type `void`.
 
 ### Parse and inspect arguments
 

@@ -64,8 +64,95 @@ inline const std::string &uint64_type_name() {
     return value;
 }
 
+inline const std::string &char_type_name() {
+    static const std::string value = "char";
+    return value;
+}
+
+inline const std::string &signed_char_type_name() {
+    static const std::string value = "signed char";
+    return value;
+}
+
+inline const std::string &unsigned_char_type_name() {
+    static const std::string value = "unsigned char";
+    return value;
+}
+
+inline const std::string &wchar_type_name() {
+    static const std::string value = "wchar_t";
+    return value;
+}
+
+inline const std::string &char16_type_name() {
+    static const std::string value = "char16_t";
+    return value;
+}
+
+inline const std::string &char32_type_name() {
+    static const std::string value = "char32_t";
+    return value;
+}
+
+#if defined(__cpp_char8_t)
+inline const std::string &char8_type_name() {
+    static const std::string value = "char8_t";
+    return value;
+}
+#endif
+
+inline const std::string &short_type_name() {
+    static const std::string value = "short";
+    return value;
+}
+
+inline const std::string &unsigned_short_type_name() {
+    static const std::string value = "unsigned short";
+    return value;
+}
+
+inline const std::string &unsigned_int_type_name() {
+    static const std::string value = "unsigned int";
+    return value;
+}
+
+inline const std::string &long_type_name() {
+    static const std::string value = "long";
+    return value;
+}
+
+inline const std::string &unsigned_long_type_name() {
+    static const std::string value = "unsigned long";
+    return value;
+}
+
+inline const std::string &long_long_type_name() {
+    static const std::string value = "long long";
+    return value;
+}
+
+inline const std::string &unsigned_long_long_type_name() {
+    static const std::string value = "unsigned long long";
+    return value;
+}
+
 inline const std::string &float_type_name() {
     static const std::string value = "float";
+    return value;
+}
+
+inline const std::string &double_type_name() {
+    static const std::string value = "double";
+    return value;
+}
+
+inline const std::string &long_double_type_name() {
+    static const std::string value = "long double";
+    return value;
+}
+
+inline const std::string &nullptr_type_name() {
+    static const std::string value = "nullptr";
     return value;
 }
 
@@ -96,11 +183,34 @@ template <typename T>
 struct is_supported_integer
     : std::integral_constant<
               bool,
-              std::is_same<T, int>::value ||
-                      std::is_same<T, std::int32_t>::value ||
-                      std::is_same<T, std::uint32_t>::value ||
-                      std::is_same<T, std::int64_t>::value ||
-                      std::is_same<T, std::uint64_t>::value> {};
+              std::is_integral<T>::value &&
+                      !std::is_same<T, bool>::value> {};
+
+template <typename T>
+struct floating_parser;
+
+template <>
+struct floating_parser<float> {
+    static float parse(const std::string &value, std::size_t *parsed_length) {
+        return std::stof(value, parsed_length);
+    }
+};
+
+template <>
+struct floating_parser<double> {
+    static double parse(const std::string &value, std::size_t *parsed_length) {
+        return std::stod(value, parsed_length);
+    }
+};
+
+template <>
+struct floating_parser<long double> {
+    static long double parse(
+            const std::string &value,
+            std::size_t *parsed_length) {
+        return std::stold(value, parsed_length);
+    }
+};
 
 [[noreturn]] inline void fail(const std::string &message) {
     std::cerr << message << '\n';
@@ -163,7 +273,51 @@ struct flag_traits<
         if (std::is_same<T, std::int64_t>::value) {
             return detail::int64_type_name();
         }
-        return detail::uint64_type_name();
+        if (std::is_same<T, std::uint64_t>::value) {
+            return detail::uint64_type_name();
+        }
+        if (std::is_same<T, char>::value) {
+            return detail::char_type_name();
+        }
+        if (std::is_same<T, signed char>::value) {
+            return detail::signed_char_type_name();
+        }
+        if (std::is_same<T, unsigned char>::value) {
+            return detail::unsigned_char_type_name();
+        }
+        if (std::is_same<T, wchar_t>::value) {
+            return detail::wchar_type_name();
+        }
+        if (std::is_same<T, char16_t>::value) {
+            return detail::char16_type_name();
+        }
+        if (std::is_same<T, char32_t>::value) {
+            return detail::char32_type_name();
+        }
+#if defined(__cpp_char8_t)
+        if (std::is_same<T, char8_t>::value) {
+            return detail::char8_type_name();
+        }
+#endif
+        if (std::is_same<T, short>::value) {
+            return detail::short_type_name();
+        }
+        if (std::is_same<T, unsigned short>::value) {
+            return detail::unsigned_short_type_name();
+        }
+        if (std::is_same<T, unsigned int>::value) {
+            return detail::unsigned_int_type_name();
+        }
+        if (std::is_same<T, long>::value) {
+            return detail::long_type_name();
+        }
+        if (std::is_same<T, unsigned long>::value) {
+            return detail::unsigned_long_type_name();
+        }
+        if (std::is_same<T, long long>::value) {
+            return detail::long_long_type_name();
+        }
+        return detail::unsigned_long_long_type_name();
     }
 
     static std::string format(T value) {
@@ -236,20 +390,29 @@ private:
     }
 };
 
-template <>
-struct flag_traits<float> {
+template <typename T>
+struct flag_traits<
+        T,
+        typename std::enable_if<std::is_floating_point<T>::value>::type> {
     static const std::string &type_name() {
-        return detail::float_type_name();
+        if (std::is_same<T, float>::value) {
+            return detail::float_type_name();
+        }
+        if (std::is_same<T, double>::value) {
+            return detail::double_type_name();
+        }
+        return detail::long_double_type_name();
     }
 
-    static std::string format(float value) {
+    static std::string format(T value) {
         return std::to_string(value);
     }
 
-    static bool parse(const std::string &value, float &output) {
+    static bool parse(const std::string &value, T &output) {
         try {
             std::size_t parsed_length = 0;
-            const float parsed_value = std::stof(value, &parsed_length);
+            const T parsed_value =
+                    detail::floating_parser<T>::parse(value, &parsed_length);
             if (parsed_length != value.size()) {
                 return false;
             }
@@ -260,6 +423,29 @@ struct flag_traits<float> {
         } catch (const std::out_of_range &) {
             return false;
         }
+    }
+
+    static bool has_implicit_value() {
+        return false;
+    }
+};
+
+template <>
+struct flag_traits<std::nullptr_t> {
+    static const std::string &type_name() {
+        return detail::nullptr_type_name();
+    }
+
+    static std::string format(std::nullptr_t) {
+        return "nullptr";
+    }
+
+    static bool parse(const std::string &value, std::nullptr_t &output) {
+        if (value != "nullptr") {
+            return false;
+        }
+        output = nullptr;
+        return true;
     }
 
     static bool has_implicit_value() {
