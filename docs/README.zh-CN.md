@@ -78,10 +78,10 @@ c++ -std=c++11 -Iinclude example/example.cc -o example
 ```text
 Usage: ./example [options]
 
- -c  --config[string] 配置文件。(./config.conf)
- -d  --daemon[bool]   以守护进程方式运行。(false)
+ -c  --config[string]    配置文件。(./config.conf)
+ -d  --daemon[bool]      以守护进程方式运行。(false)
      --load-limit[float] 最大负载。(0.750000)
- -p  --port[int]      服务端口。(8080)
+ -p  --port[int]         服务端口。(8080)
 ```
 
 ## 参数语法

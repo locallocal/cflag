@@ -82,10 +82,10 @@ Example invocations:
 ```text
 Usage: ./example [options]
 
- -c  --config[string] configuration file.(./config.conf)
- -d  --daemon[bool]   run as a daemon.(false)
+ -c  --config[string]    configuration file.(./config.conf)
+ -d  --daemon[bool]      run as a daemon.(false)
      --load-limit[float] maximum load.(0.750000)
- -p  --port[int]      server port.(8080)
+ -p  --port[int]         server port.(8080)
 ```
 
 ## Flag syntax

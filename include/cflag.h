@@ -657,19 +657,38 @@ inline void c_flag_set::usage() const {
 }
 
 inline void c_flag_set::print_flags() const {
+    std::vector<std::string> flag_labels;
+    flag_labels.reserve(flags_.size());
+    std::size_t label_width = 0;
+
     for (const auto &entry : flags_) {
         const std::shared_ptr<c_flag> &flag = entry.second;
+        std::string label;
         if (!flag->short_name().empty()) {
-            std::cout << " -" << flag->short_name() << "  ";
+            label = " -" + flag->short_name() + "  ";
         } else {
-            std::cout << "     ";
+            label = "     ";
         }
         if (!flag->name().empty()) {
-            std::cout << "--" << flag->name();
+            label += "--" + flag->name();
         } else {
-            std::cout << "    ";
+            label += "    ";
         }
-        std::cout << '[' << flag->value()->type() << "]\t" << flag->usage();
+        label += '[';
+        label += flag->value()->type();
+        label += ']';
+        if (label.size() > label_width) {
+            label_width = label.size();
+        }
+        flag_labels.push_back(label);
+    }
+
+    std::size_t index = 0;
+    for (const auto &entry : flags_) {
+        const std::shared_ptr<c_flag> &flag = entry.second;
+        const std::string &label = flag_labels[index++];
+        std::cout << label << std::string(label_width - label.size() + 1, ' ')
+                  << flag->usage();
         if (!flag->default_value().empty()) {
             std::cout << '(' << flag->default_value() << ')';
         }
