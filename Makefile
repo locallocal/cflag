@@ -3,7 +3,7 @@ BUILD_SCRIPT := ./build.sh
 EXAMPLE_BIN := build/bin/example
 ARGS ?= --help
 
-SOURCE_DIRS := include example tests
+SOURCE_DIRS := include example tests skills
 SOURCES := $(shell find $(SOURCE_DIRS) -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' \))
 
 .PHONY: all release debug test cov clean example format format-check help
