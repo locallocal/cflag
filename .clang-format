@@ -1,0 +1,14 @@
+# Google C++ style with project overrides.
+# See https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+---
+Language: Cpp
+BasedOnStyle: Google
+
+IndentWidth: 4
+ColumnLimit: 120
+
+# Keep IndentWidth-relative settings consistent with 4-space indentation.
+AccessModifierOffset: -4
+TabWidth: 4
+UseTab: Never
+...
