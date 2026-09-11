@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
+#include <gtest/gtest.h>
 
 #include <cstddef>
 #include <limits>
@@ -20,14 +20,12 @@
 #include <type_traits>
 #include <vector>
 
-#include <gtest/gtest.h>
+#include "cflag.h"
 
 namespace {
 
 std::string increment_decimal(std::string value) {
-    for (std::string::reverse_iterator digit = value.rbegin();
-            digit != value.rend();
-            ++digit) {
+    for (std::string::reverse_iterator digit = value.rbegin(); digit != value.rend(); ++digit) {
         if (*digit != '9') {
             ++*digit;
             return value;
@@ -38,10 +36,9 @@ std::string increment_decimal(std::string value) {
 }
 
 template <typename T>
-void expect_flag_value(const std::string &text, T expected) {
+void expect_flag_value(const std::string& text, T expected) {
     T result = T();
-    const std::vector<std::string> arguments{
-            "test-builtin-types", "--value=" + text};
+    const std::vector<std::string> arguments{"test-builtin-types", "--value=" + text};
 
     cflag::reset();
     cflag::var(&result, "value", T(), "built-in value.");
@@ -53,40 +50,30 @@ void expect_flag_value(const std::string &text, T expected) {
 template <typename T>
 void expect_integer_boundaries(T, std::true_type) {
     T result = T();
-    const long long minimum =
-            static_cast<long long>(std::numeric_limits<T>::min());
-    const long long maximum =
-            static_cast<long long>(std::numeric_limits<T>::max());
+    const long long minimum = static_cast<long long>(std::numeric_limits<T>::min());
+    const long long maximum = static_cast<long long>(std::numeric_limits<T>::max());
 
     EXPECT_TRUE(cflag::flag_traits<T>::parse(std::to_string(minimum), result));
     EXPECT_EQ(std::numeric_limits<T>::min(), result);
     EXPECT_TRUE(cflag::flag_traits<T>::parse(std::to_string(maximum), result));
     EXPECT_EQ(std::numeric_limits<T>::max(), result);
 
-    const unsigned long long minimum_magnitude =
-            static_cast<unsigned long long>(-(minimum + 1)) + 1;
-    EXPECT_FALSE(cflag::flag_traits<T>::parse(
-            "-" + increment_decimal(std::to_string(minimum_magnitude)),
-            result));
-    EXPECT_FALSE(cflag::flag_traits<T>::parse(
-            increment_decimal(std::to_string(maximum)),
-            result));
+    const unsigned long long minimum_magnitude = static_cast<unsigned long long>(-(minimum + 1)) + 1;
+    EXPECT_FALSE(cflag::flag_traits<T>::parse("-" + increment_decimal(std::to_string(minimum_magnitude)), result));
+    EXPECT_FALSE(cflag::flag_traits<T>::parse(increment_decimal(std::to_string(maximum)), result));
 }
 
 template <typename T>
 void expect_integer_boundaries(T, std::false_type) {
     T result = T();
-    const unsigned long long maximum =
-            static_cast<unsigned long long>(std::numeric_limits<T>::max());
+    const unsigned long long maximum = static_cast<unsigned long long>(std::numeric_limits<T>::max());
 
     EXPECT_TRUE(cflag::flag_traits<T>::parse("0", result));
     EXPECT_EQ(T(), result);
     EXPECT_TRUE(cflag::flag_traits<T>::parse(std::to_string(maximum), result));
     EXPECT_EQ(std::numeric_limits<T>::max(), result);
 
-    EXPECT_FALSE(cflag::flag_traits<T>::parse(
-            increment_decimal(std::to_string(maximum)),
-            result));
+    EXPECT_FALSE(cflag::flag_traits<T>::parse(increment_decimal(std::to_string(maximum)), result));
     EXPECT_FALSE(cflag::flag_traits<T>::parse("-1", result));
 }
 
@@ -95,7 +82,7 @@ void expect_integer_boundaries() {
     expect_integer_boundaries(T(), std::is_signed<T>());
 }
 
-} // namespace
+}  // namespace
 
 TEST(test_builtin_types, test_character_types) {
     expect_flag_value<char>("65", static_cast<char>(65));
@@ -130,8 +117,7 @@ TEST(test_builtin_types, test_floating_point_types) {
     long double long_double_value = 0.0L;
     EXPECT_FALSE(cflag::flag_traits<float>::parse("1.0f", float_value));
     EXPECT_FALSE(cflag::flag_traits<double>::parse("2.0d", double_value));
-    EXPECT_FALSE(
-            cflag::flag_traits<long double>::parse("3.0L", long_double_value));
+    EXPECT_FALSE(cflag::flag_traits<long double>::parse("3.0L", long_double_value));
 }
 
 TEST(test_builtin_types, test_nullptr_type) {

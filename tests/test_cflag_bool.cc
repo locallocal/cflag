@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
 #include <gtest/gtest.h>
+
+#include "cflag.h"
 
 TEST(test_bool, test_long_args_true) {
     bool result = false;
     std::vector<std::string> true_values{"TRUE", "True", "T", "true", "t", "1"};
     std::vector<std::string> arguments;
 
-    for (auto &it : true_values) {
+    for (auto& it : true_values) {
         cflag::reset();
         result = false;
         cflag::var(&result, "test", false, "test true.");
@@ -38,7 +39,7 @@ TEST(test_bool, test_long_args_false) {
     std::vector<std::string> true_values{"FALSE", "False", "F", "false", "f", "0"};
     std::vector<std::string> arguments;
 
-    for (auto &it : true_values) {
+    for (auto& it : true_values) {
         cflag::reset();
         result = true;
         cflag::var(&result, "test", false, "test false.");
@@ -103,4 +104,3 @@ TEST(test_bool, test_invalid) {
     arguments.push_back("--test=invalid");
     EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
-

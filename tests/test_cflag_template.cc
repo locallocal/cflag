@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
-
 #include <gtest/gtest.h>
+
+#include "cflag.h"
 
 enum class test_mode {
     safe,
@@ -25,16 +25,14 @@ namespace cflag {
 
 template <>
 struct flag_traits<test_mode> {
-    static const std::string &type_name() {
+    static const std::string& type_name() {
         static const std::string value = "mode";
         return value;
     }
 
-    static std::string format(test_mode value) {
-        return value == test_mode::safe ? "safe" : "fast";
-    }
+    static std::string format(test_mode value) { return value == test_mode::safe ? "safe" : "fast"; }
 
-    static bool parse(const std::string &value, test_mode &output) {
+    static bool parse(const std::string& value, test_mode& output) {
         if (value == "safe") {
             output = test_mode::safe;
             return true;
@@ -46,18 +44,15 @@ struct flag_traits<test_mode> {
         return false;
     }
 
-    static bool has_implicit_value() {
-        return false;
-    }
+    static bool has_implicit_value() { return false; }
 };
 
-} // namespace cflag
+}  // namespace cflag
 
 TEST(test_template, test_generic_var_and_varp) {
     int port = 0;
     std::string config;
-    const std::vector<std::string> arguments{
-            "test-template", "--port", "8080", "-csettings.json"};
+    const std::vector<std::string> arguments{"test-template", "--port", "8080", "-csettings.json"};
 
     cflag::reset();
     cflag::var(&port, "port", 80, "server port.");

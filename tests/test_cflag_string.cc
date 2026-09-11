@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
 #include <gtest/gtest.h>
+
+#include "cflag.h"
 
 TEST(test_string, test_long_args_string) {
     std::string result;

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
 #include <gtest/gtest.h>
+
+#include "cflag.h"
 
 TEST(test_int, test_long_args_positive_int) {
     int result = 0;
     std::vector<std::string> arguments;
-    
+
     cflag::reset();
     cflag::var(&result, "test", 0, "test int.");
     arguments.clear();
