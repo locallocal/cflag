@@ -46,6 +46,55 @@ TEST(test_common, test_print_flags_aligns_usage_column) {
         output);
 }
 
+TEST(test_common, test_print_flags_wraps_long_usage) {
+    std::string option;
+    cflag::flag_set flag_set;
+
+    flag_set.var(&option, "option", std::string("default"),
+                 "aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss "
+                 "tttt uuuu vvvv wwww xxxx yyyy zzzz");
+
+    testing::internal::CaptureStdout();
+    flag_set.print_flags();
+    const std::string output = testing::internal::GetCapturedStdout();
+
+    EXPECT_EQ(
+        "     --option[string] aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo\n"
+        "                      pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz(default)\n",
+        output);
+}
+
+TEST(test_common, test_print_flags_limits_line_width) {
+    int number = 0;
+    std::string word;
+    cflag::flag_set flag_set;
+
+    flag_set.varp(&number, "number", "n", 42,
+                  "a fairly long description that keeps going on and on so that it needs to be wrapped over "
+                  "several lines before the output fits into the width limit.");
+    flag_set.var(&word, "word", std::string(),
+                 std::string("no-spaces-") + std::string(120, 'x') + " tail of the description.");
+
+    testing::internal::CaptureStdout();
+    flag_set.print_flags();
+    const std::string output = testing::internal::GetCapturedStdout();
+
+    std::size_t line_count = 0;
+    std::size_t begin = 0;
+    while (begin < output.size()) {
+        std::size_t end = output.find('\n', begin);
+        if (end == std::string::npos) {
+            end = output.size();
+        }
+        EXPECT_LE(end - begin, 100u) << output.substr(begin, end - begin);
+        ++line_count;
+        begin = end + 1;
+    }
+    EXPECT_GT(line_count, 2u);
+    EXPECT_NE(output.find("(42)"), std::string::npos);
+    EXPECT_NE(output.find("tail of the description."), std::string::npos);
+}
+
 TEST(test_common, test_terminat) {
     bool result_00 = false;
     bool result_01 = false;
