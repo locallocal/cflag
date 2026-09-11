@@ -28,9 +28,9 @@
 
 namespace cflag {
 
-class c_flag_set;
-class c_flag;
-class i_value;
+class flag_set;
+class flag;
+class value;
 
 namespace detail {
 
@@ -419,25 +419,25 @@ struct flag_traits<std::string> {
     static bool has_implicit_value() { return false; }
 };
 
-class i_value {
+class value {
 public:
-    virtual ~i_value() = default;
-    virtual bool set(const std::string& value) = 0;
+    virtual ~value() = default;
+    virtual bool set(const std::string& text) = 0;
     virtual const std::string& type() const = 0;
     virtual bool has_implicit_value() const = 0;
 };
 
 template <typename T>
-class c_value final : public i_value {
+class c_value final : public value {
 public:
     explicit c_value(T* arg) : arg_(arg) {}
 
-    bool set(const std::string& value) override {
+    bool set(const std::string& text) override {
         if (arg_ == nullptr) {
             return false;
         }
         T parsed_value = *arg_;
-        if (!flag_traits<T>::parse(value, parsed_value)) {
+        if (!flag_traits<T>::parse(text, parsed_value)) {
             return false;
         }
         *arg_ = parsed_value;
@@ -452,9 +452,9 @@ private:
     T* arg_;
 };
 
-class c_flag {
+class flag {
 public:
-    explicit c_flag(const std::string& name) : name_(name) {}
+    explicit flag(const std::string& name) : name_(name) {}
 
     void short_name(const std::string& short_name) { short_name_ = short_name; }
 
@@ -462,7 +462,7 @@ public:
 
     void default_value(const std::string& default_value) { default_value_ = default_value; }
 
-    void value(const std::shared_ptr<i_value>& value) { value_ = value; }
+    void value(const std::shared_ptr<cflag::value>& value) { value_ = value; }
 
     const std::string& name() const { return name_; }
 
@@ -472,23 +472,23 @@ public:
 
     const std::string& default_value() const { return default_value_; }
 
-    const std::shared_ptr<i_value>& value() const { return value_; }
+    const std::shared_ptr<cflag::value>& value() const { return value_; }
 
 private:
     std::string name_;
     std::string short_name_;
     std::string usage_;
     std::string default_value_;
-    std::shared_ptr<i_value> value_;
+    std::shared_ptr<cflag::value> value_;
 };
 
-class c_flag_set {
+class flag_set {
 public:
-    c_flag_set() = default;
-    c_flag_set(const c_flag_set&) = delete;
-    c_flag_set(c_flag_set&&) = delete;
-    c_flag_set& operator=(const c_flag_set&) = delete;
-    c_flag_set& operator=(c_flag_set&&) = delete;
+    flag_set() = default;
+    flag_set(const flag_set&) = delete;
+    flag_set(flag_set&&) = delete;
+    flag_set& operator=(const flag_set&) = delete;
+    flag_set& operator=(flag_set&&) = delete;
 
     void usage() const;
     void print_flags() const;
@@ -513,54 +513,53 @@ public:
     const std::vector<std::string>& args() const { return args_; }
 
 private:
-    std::shared_ptr<c_flag> lookup_(const std::string& name, bool short_name) const;
-    void add_flag_(const std::shared_ptr<c_flag>& flag);
+    std::shared_ptr<flag> lookup_(const std::string& name, bool short_name) const;
+    void add_flag_(const std::shared_ptr<flag>& flag);
     void parse_long_args_(const std::string& segment, std::size_t& index, const std::vector<std::string>& arguments);
     void parse_short_args_(const std::string& segment, std::size_t& index, const std::vector<std::string>& arguments);
 
     std::string program_;
-    std::map<std::string, std::shared_ptr<c_flag>> flags_;
-    std::map<std::string, std::shared_ptr<c_flag>> short_flags_;
+    std::map<std::string, std::shared_ptr<flag>> flags_;
+    std::map<std::string, std::shared_ptr<flag>> short_flags_;
     std::vector<std::string> args_;
 };
 
 template <typename T>
-inline void c_flag_set::var(T* arg, const std::string& name,
-                            const typename detail::type_identity<T>::type& default_value,
-                            const std::string& usage_text) {
+inline void flag_set::var(T* arg, const std::string& name, const typename detail::type_identity<T>::type& default_value,
+                          const std::string& usage_text) {
     varp(arg, name, "", default_value, usage_text);
 }
 
 template <typename T>
-inline void c_flag_set::varp(T* arg, const std::string& name, const std::string& short_name,
-                             const typename detail::type_identity<T>::type& default_value,
-                             const std::string& usage_text) {
+inline void flag_set::varp(T* arg, const std::string& name, const std::string& short_name,
+                           const typename detail::type_identity<T>::type& default_value,
+                           const std::string& usage_text) {
     if (arg == nullptr) {
         detail::fail("flag target cannot be null.");
     }
 
-    std::shared_ptr<c_flag> flag = std::make_shared<c_flag>(name);
-    flag->short_name(short_name);
-    flag->usage(usage_text);
-    flag->default_value(flag_traits<T>::format(default_value));
-    flag->value(std::make_shared<c_value<T>>(arg));
+    std::shared_ptr<flag> new_flag = std::make_shared<flag>(name);
+    new_flag->short_name(short_name);
+    new_flag->usage(usage_text);
+    new_flag->default_value(flag_traits<T>::format(default_value));
+    new_flag->value(std::make_shared<c_value<T>>(arg));
 
-    add_flag_(flag);
+    add_flag_(new_flag);
     *arg = default_value;
 }
 
-inline void c_flag_set::usage() const {
+inline void flag_set::usage() const {
     std::cout << "Usage: " << program() << " [options]\n\n";
     print_flags();
 }
 
-inline void c_flag_set::print_flags() const {
+inline void flag_set::print_flags() const {
     std::vector<std::string> flag_labels;
     flag_labels.reserve(flags_.size());
     std::size_t label_width = 0;
 
     for (const auto& entry : flags_) {
-        const std::shared_ptr<c_flag>& flag = entry.second;
+        const std::shared_ptr<flag>& flag = entry.second;
         std::string label;
         if (!flag->short_name().empty()) {
             label = " -" + flag->short_name() + "  ";
@@ -583,7 +582,7 @@ inline void c_flag_set::print_flags() const {
 
     std::size_t index = 0;
     for (const auto& entry : flags_) {
-        const std::shared_ptr<c_flag>& flag = entry.second;
+        const std::shared_ptr<flag>& flag = entry.second;
         const std::string& label = flag_labels[index++];
         std::cout << label << std::string(label_width - label.size() + 1, ' ') << flag->usage();
         if (!flag->default_value().empty()) {
@@ -593,7 +592,7 @@ inline void c_flag_set::print_flags() const {
     }
 }
 
-inline void c_flag_set::parse(int argc, char* argv[]) {
+inline void flag_set::parse(int argc, char* argv[]) {
     if (argc > 0 && argv == nullptr) {
         detail::fail("argument vector cannot be null.");
     }
@@ -606,7 +605,7 @@ inline void c_flag_set::parse(int argc, char* argv[]) {
     parse(arguments);
 }
 
-inline void c_flag_set::parse(const std::vector<std::string>& arguments) {
+inline void flag_set::parse(const std::vector<std::string>& arguments) {
     args_.clear();
     if (arguments.empty()) {
         program_.clear();
@@ -635,8 +634,8 @@ inline void c_flag_set::parse(const std::vector<std::string>& arguments) {
     }
 }
 
-inline void c_flag_set::parse_long_args_(const std::string& segment, std::size_t& index,
-                                         const std::vector<std::string>& arguments) {
+inline void flag_set::parse_long_args_(const std::string& segment, std::size_t& index,
+                                       const std::vector<std::string>& arguments) {
     const std::string argument = segment.substr(2);
     const std::size_t separator = argument.find('=');
     const bool has_inline_value = separator != std::string::npos;
@@ -648,12 +647,12 @@ inline void c_flag_set::parse_long_args_(const std::string& segment, std::size_t
         std::exit(EXIT_SUCCESS);
     }
 
-    const std::shared_ptr<c_flag> flag = lookup_(flag_name, false);
+    const std::shared_ptr<flag> flag = lookup_(flag_name, false);
     if (flag == nullptr) {
         detail::fail("flag " + flag_name + " not exist.");
     }
 
-    const std::shared_ptr<i_value>& value = flag->value();
+    const std::shared_ptr<value>& value = flag->value();
     if (value->has_implicit_value() && !has_inline_value) {
         flag_value = "true";
     } else if (!has_inline_value) {
@@ -668,8 +667,8 @@ inline void c_flag_set::parse_long_args_(const std::string& segment, std::size_t
     }
 }
 
-inline void c_flag_set::parse_short_args_(const std::string& segment, std::size_t& index,
-                                          const std::vector<std::string>& arguments) {
+inline void flag_set::parse_short_args_(const std::string& segment, std::size_t& index,
+                                        const std::vector<std::string>& arguments) {
     const std::string argument = segment.substr(1);
 
     for (std::size_t argument_index = 0; argument_index < argument.size(); ++argument_index) {
@@ -679,12 +678,12 @@ inline void c_flag_set::parse_short_args_(const std::string& segment, std::size_
             std::exit(EXIT_SUCCESS);
         }
 
-        const std::shared_ptr<c_flag> flag = lookup_(flag_name, true);
+        const std::shared_ptr<flag> flag = lookup_(flag_name, true);
         if (flag == nullptr) {
             detail::fail("flag " + flag_name + " not exist.");
         }
 
-        const std::shared_ptr<i_value>& value = flag->value();
+        const std::shared_ptr<value>& value = flag->value();
         std::string flag_value;
         if (value->has_implicit_value()) {
             flag_value = "true";
@@ -704,13 +703,13 @@ inline void c_flag_set::parse_short_args_(const std::string& segment, std::size_
     }
 }
 
-inline std::shared_ptr<c_flag> c_flag_set::lookup_(const std::string& name, bool short_name) const {
-    const std::map<std::string, std::shared_ptr<c_flag>>& flags = short_name ? short_flags_ : flags_;
+inline std::shared_ptr<flag> flag_set::lookup_(const std::string& name, bool short_name) const {
+    const std::map<std::string, std::shared_ptr<flag>>& flags = short_name ? short_flags_ : flags_;
     const auto found = flags.find(name);
     return found == flags.end() ? nullptr : found->second;
 }
 
-inline void c_flag_set::add_flag_(const std::shared_ptr<c_flag>& flag) {
+inline void flag_set::add_flag_(const std::shared_ptr<flag>& flag) {
     const std::string& name = flag->name();
     const std::string& short_name = flag->short_name();
 
@@ -738,7 +737,7 @@ inline void c_flag_set::add_flag_(const std::shared_ptr<c_flag>& flag) {
     }
 }
 
-inline void c_flag_set::reset() {
+inline void flag_set::reset() {
     flags_.clear();
     short_flags_.clear();
     args_.clear();
@@ -747,14 +746,14 @@ inline void c_flag_set::reset() {
 
 namespace detail {
 
-inline c_flag_set& global_flag_set_storage() {
-    static c_flag_set flag_set;
+inline flag_set& global_flag_set_storage() {
+    static flag_set flag_set;
     return flag_set;
 }
 
 }  // namespace detail
 
-inline c_flag_set& global_flag_set() { return detail::global_flag_set_storage(); }
+inline flag_set& global_flag_set() { return detail::global_flag_set_storage(); }
 
 template <typename T>
 inline void var(T* arg, const std::string& name, const typename detail::type_identity<T>::type& default_value,
