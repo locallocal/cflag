@@ -171,6 +171,55 @@ inline const std::string& help_short_flag_name() {
     return value;
 }
 
+// Maximum width of a line printed by flag_set::print_flags().
+inline std::size_t usage_line_width() { return 100; }
+
+// Minimum width reserved for the usage column, even when the labels are very wide.
+inline std::size_t usage_min_text_width() { return 20; }
+
+// Splits text into lines no longer than width, breaking on spaces where possible.
+inline std::vector<std::string> wrap_text(const std::string& text, std::size_t width) {
+    std::vector<std::string> lines;
+    std::string line;
+    std::size_t position = 0;
+
+    while (position < text.size()) {
+        std::size_t word_end = text.find(' ', position);
+        if (word_end == std::string::npos) {
+            word_end = text.size();
+        }
+        std::string word = text.substr(position, word_end - position);
+        position = word_end + 1;
+        if (word.empty()) {
+            continue;
+        }
+
+        while (word.size() > width) {
+            if (!line.empty()) {
+                lines.push_back(line);
+                line.clear();
+            }
+            lines.push_back(word.substr(0, width));
+            word.erase(0, width);
+        }
+
+        if (line.empty()) {
+            line = word;
+        } else if (line.size() + 1 + word.size() <= width) {
+            line += ' ';
+            line += word;
+        } else {
+            lines.push_back(line);
+            line = word;
+        }
+    }
+
+    if (!line.empty() || lines.empty()) {
+        lines.push_back(line);
+    }
+    return lines;
+}
+
 template <typename>
 struct dependent_false : std::false_type {};
 
@@ -580,15 +629,27 @@ inline void flag_set::print_flags() const {
         flag_labels.push_back(label);
     }
 
+    const std::size_t text_column = label_width + 1;
+    const std::size_t text_width = text_column + detail::usage_min_text_width() <= detail::usage_line_width()
+                                       ? detail::usage_line_width() - text_column
+                                       : detail::usage_min_text_width();
+
     std::size_t index = 0;
     for (const auto& entry : flags_) {
         const std::shared_ptr<flag>& flag = entry.second;
         const std::string& label = flag_labels[index++];
-        std::cout << label << std::string(label_width - label.size() + 1, ' ') << flag->usage();
+        std::string text = flag->usage();
         if (!flag->default_value().empty()) {
-            std::cout << '(' << flag->default_value() << ')';
+            text += '(';
+            text += flag->default_value();
+            text += ')';
         }
-        std::cout << '\n';
+
+        const std::vector<std::string> lines = detail::wrap_text(text, text_width);
+        std::cout << label << std::string(text_column - label.size(), ' ') << lines[0] << '\n';
+        for (std::size_t line_index = 1; line_index < lines.size(); ++line_index) {
+            std::cout << std::string(text_column, ' ') << lines[line_index] << '\n';
+        }
     }
 }
 
