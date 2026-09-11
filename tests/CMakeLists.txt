@@ -5,6 +5,7 @@ add_executable(cflag-test
     test_cflag_builtin_types.cc
     test_cflag_common.cc
     test_cflag_fixed_width.cc
+    test_cflag_flag_file.cc
     test_cflag_float.cc
     test_cflag_int.cc
     test_cflag_string.cc

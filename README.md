@@ -18,6 +18,8 @@ fixed-width integer aliases, and strings out of the box, while
   newer.
 - Long flags, short flags, combined Boolean short flags, and positional
   arguments.
+- Built-in `--flag-file` option that loads flags from JSON, YAML, or
+  gflags-style files without extra dependencies.
 - Strict value validation: malformed or partially parsed values are rejected.
 - Extensible conversion through `flag_traits<T>`.
 - C++11-compatible global state shared safely across translation units.
@@ -109,9 +111,62 @@ A single `-` is treated as a positional argument. Parsed positional arguments
 are available from `cflag::args()`.
 
 Short names must contain exactly one character. `help` and `h` are reserved
-for the built-in help flags. Duplicate names, unknown flags, missing values,
-and invalid values are reported to standard error and terminate parsing with
-`EXIT_FAILURE`.
+for the built-in help flags, and `flag-file` is reserved for the built-in flag
+file option. Duplicate names, unknown flags, missing values, and invalid values
+are reported to standard error and terminate parsing with `EXIT_FAILURE`.
+
+### Flag files
+
+`--flag-file=<path>` (or `--flag-file <path>`) reads flags from a file. The
+file is applied at the position where the option appears, so later
+command-line arguments override values from the file, and a file may itself
+contain `flag-file` to include another file (up to 16 levels deep). Relative
+paths are resolved against the current working directory.
+
+The format is chosen from the extension (`.json`, `.yaml`, `.yml`). Any other
+extension is sniffed from the content: `{` selects JSON, a leading `-` selects
+the gflags format, and everything else is YAML.
+
+gflags format: one argument per line, using the same syntax as the command
+line. Blank lines and lines starting with `#` are ignored; positional
+arguments are not allowed.
+
+```text
+# server.flags
+--port=9000
+--daemon
+-k0.5
+```
+
+JSON format: a single object whose members map long flag names to scalar
+values. Strings, numbers, and Booleans are accepted; `null`, nested objects,
+and arrays are rejected.
+
+```json
+{
+  "port": 9000,
+  "daemon": true,
+  "config": "/etc/example.conf"
+}
+```
+
+YAML format: a flat mapping of long flag names to scalar values. Comments,
+document markers, plain, single-quoted, and double-quoted scalars are
+supported. Plain scalars are taken literally, so `yes` is not a Boolean.
+Nested mappings, lists, block scalars, anchors, and tags are rejected.
+
+```yaml
+port: 9000        # comments are allowed
+daemon: true
+config: "/etc/example.conf"
+```
+
+Flag files can also be loaded programmatically:
+
+```cpp
+cflag::parse_file("server.yaml");
+cflag::parse_file("server.conf", cflag::flag_file_format::gflags);
+```
 
 ## Integration
 
@@ -203,16 +258,23 @@ not permit an object or flag target of type `void`.
 ### Parse and inspect arguments
 
 ```cpp
+enum class cflag::flag_file_format { automatic, json, yaml, gflags };
+
 void cflag::parse(int argc, char *argv[]);
 void cflag::parse(const std::vector<std::string> &arguments);
+void cflag::parse_file(
+        const std::string &path,
+        cflag::flag_file_format format = cflag::flag_file_format::automatic);
 std::vector<std::string> &cflag::args();
 void cflag::usage();
 void cflag::reset();
 ```
 
 `parse` updates registered targets and replaces the stored positional
-arguments. `reset` removes every registration, positional argument, and stored
-program name. Register flags again after calling it.
+arguments. `parse_file` applies the flags stored in a file without touching
+the positional arguments or the program name; see [Flag files](#flag-files)
+for the accepted formats. `reset` removes every registration, positional
+argument, and stored program name. Register flags again after calling it.
 
 Registration and parsing mutate the flag set; perform them before sharing
 results with worker threads.
