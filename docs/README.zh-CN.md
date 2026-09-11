@@ -14,6 +14,8 @@
   `std::nullptr_t`、固定宽度整数别名和 `std::string`。
 - 使用 C++20 或更高标准编译时，同时支持 C++20 的 `char8_t`。
 - 支持长选项、短选项、布尔短选项组合及位置参数。
+- 内置 `--flag-file` 选项，可从 JSON、YAML 或 gflags 风格的文件中读取参数，
+  无需额外依赖。
 - 严格校验参数值，拒绝非法值和仅部分转换成功的值。
 - 通过 `flag_traits<T>` 扩展自定义类型。
 - 兼容 C++11，并保证多个翻译单元共享同一份全局参数状态。
@@ -104,9 +106,57 @@ Usage: ./example [options]
 单独的 `-` 会被视为位置参数。解析得到的位置参数可通过
 `cflag::args()` 获取。
 
-短选项名称必须是单个字符。`help` 和 `h` 已被内置帮助选项保留。出现
-重复名称、未知选项、缺少值或非法值时，解析器会向标准错误输出信息，并以
-`EXIT_FAILURE` 终止程序。
+短选项名称必须是单个字符。`help` 和 `h` 已被内置帮助选项保留，
+`flag-file` 已被内置参数文件选项保留。出现重复名称、未知选项、缺少值或
+非法值时，解析器会向标准错误输出信息，并以 `EXIT_FAILURE` 终止程序。
+
+### 参数文件
+
+`--flag-file=<路径>`（或 `--flag-file <路径>`）会从文件中读取参数。文件
+在该选项出现的位置生效，因此命令行中位于其后的参数会覆盖文件中的值；
+文件内也可以再写 `flag-file` 引入其他文件，最多嵌套 16 层。相对路径以
+当前工作目录为基准。
+
+格式根据扩展名判断（`.json`、`.yaml`、`.yml`）。其他扩展名按内容识别：
+以 `{` 开头视为 JSON，以 `-` 开头视为 gflags 格式，其余视为 YAML。
+
+gflags 格式：每行一个参数，语法与命令行一致。空行和以 `#` 开头的行会被
+忽略，不允许出现位置参数。
+
+```text
+# server.flags
+--port=9000
+--daemon
+-k0.5
+```
+
+JSON 格式：单个对象，键为长选项名，值为标量。支持字符串、数字和布尔值；
+`null`、嵌套对象和数组会被拒绝。
+
+```json
+{
+  "port": 9000,
+  "daemon": true,
+  "config": "/etc/example.conf"
+}
+```
+
+YAML 格式：长选项名到标量值的扁平映射。支持注释、文档分隔符、普通标量、
+单引号和双引号标量。普通标量按字面值处理，因此 `yes` 不会被当作布尔值。
+嵌套映射、列表、块标量、锚点和标签会被拒绝。
+
+```yaml
+port: 9000        # 允许注释
+daemon: true
+config: "/etc/example.conf"
+```
+
+也可以在代码中直接加载参数文件：
+
+```cpp
+cflag::parse_file("server.yaml");
+cflag::parse_file("server.conf", cflag::flag_file_format::gflags);
+```
 
 ## 集成方式
 
@@ -194,15 +244,22 @@ void cflag::varp(
 ### 解析和读取位置参数
 
 ```cpp
+enum class cflag::flag_file_format { automatic, json, yaml, gflags };
+
 void cflag::parse(int argc, char *argv[]);
 void cflag::parse(const std::vector<std::string> &arguments);
+void cflag::parse_file(
+        const std::string &path,
+        cflag::flag_file_format format = cflag::flag_file_format::automatic);
 std::vector<std::string> &cflag::args();
 void cflag::usage();
 void cflag::reset();
 ```
 
-`parse` 会更新已注册的目标变量，并替换上一次保存的位置参数。`reset`
-会清除所有注册项、位置参数和程序名称；调用后需要重新注册参数。
+`parse` 会更新已注册的目标变量，并替换上一次保存的位置参数。`parse_file`
+只应用文件中的参数，不会改动位置参数和程序名称；支持的格式见
+[参数文件](#参数文件)。`reset` 会清除所有注册项、位置参数和程序名称；
+调用后需要重新注册参数。
 
 注册和解析操作会修改参数集合，建议在启动工作线程前完成这些操作。
 
