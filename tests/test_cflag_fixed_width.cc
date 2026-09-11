@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
+#include <gtest/gtest.h>
 
 #include <cstdint>
 #include <limits>
 
-#include <gtest/gtest.h>
+#include "cflag.h"
 
 TEST(test_fixed_width, test_parse_boundaries) {
     std::uint32_t uint32_value = 0;
     std::int32_t int32_value = 0;
     std::uint64_t uint64_value = 0;
     std::int64_t int64_value = 0;
-    const std::vector<std::string> arguments{
-            "test-fixed-width",
-            "--uint32=4294967295",
-            "--int32=-2147483648",
-            "--uint64=18446744073709551615",
-            "--int64=-9223372036854775808"};
+    const std::vector<std::string> arguments{"test-fixed-width", "--uint32=4294967295", "--int32=-2147483648",
+                                             "--uint64=18446744073709551615", "--int64=-9223372036854775808"};
 
     cflag::reset();
     cflag::var(&uint32_value, "uint32", std::uint32_t{0}, "uint32 value.");
@@ -49,23 +45,18 @@ TEST(test_fixed_width, test_type_names) {
     EXPECT_EQ("uint64", cflag::flag_traits<std::uint64_t>::type_name());
     EXPECT_EQ("int64", cflag::flag_traits<std::int64_t>::type_name());
 
-    const std::string &int32_name =
-            cflag::flag_traits<std::int32_t>::type_name();
+    const std::string& int32_name = cflag::flag_traits<std::int32_t>::type_name();
     EXPECT_TRUE(int32_name == "int32" || int32_name == "int");
 }
 
 TEST(test_fixed_width, test_reject_uint32_overflow) {
     std::uint32_t result = 0;
-    const std::vector<std::string> arguments{
-            "test-fixed-width", "--test=4294967296"};
+    const std::vector<std::string> arguments{"test-fixed-width", "--test=4294967296"};
 
     cflag::reset();
     cflag::var(&result, "test", std::uint32_t{0}, "uint32 value.");
 
-    EXPECT_EXIT(
-            cflag::parse(arguments),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*invalid.*");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
 
 TEST(test_fixed_width, test_reject_negative_uint32) {
@@ -75,50 +66,35 @@ TEST(test_fixed_width, test_reject_negative_uint32) {
     cflag::reset();
     cflag::var(&result, "test", std::uint32_t{0}, "uint32 value.");
 
-    EXPECT_EXIT(
-            cflag::parse(arguments),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*invalid.*");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
 
 TEST(test_fixed_width, test_reject_int32_overflow) {
     std::int32_t result = 0;
-    const std::vector<std::string> arguments{
-            "test-fixed-width", "--test=2147483648"};
+    const std::vector<std::string> arguments{"test-fixed-width", "--test=2147483648"};
 
     cflag::reset();
     cflag::var(&result, "test", std::int32_t{0}, "int32 value.");
 
-    EXPECT_EXIT(
-            cflag::parse(arguments),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*invalid.*");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
 
 TEST(test_fixed_width, test_reject_uint64_overflow) {
     std::uint64_t result = 0;
-    const std::vector<std::string> arguments{
-            "test-fixed-width", "--test=18446744073709551616"};
+    const std::vector<std::string> arguments{"test-fixed-width", "--test=18446744073709551616"};
 
     cflag::reset();
     cflag::var(&result, "test", std::uint64_t{0}, "uint64 value.");
 
-    EXPECT_EXIT(
-            cflag::parse(arguments),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*invalid.*");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }
 
 TEST(test_fixed_width, test_reject_int64_overflow) {
     std::int64_t result = 0;
-    const std::vector<std::string> arguments{
-            "test-fixed-width", "--test=9223372036854775808"};
+    const std::vector<std::string> arguments{"test-fixed-width", "--test=9223372036854775808"};
 
     cflag::reset();
     cflag::var(&result, "test", std::int64_t{0}, "int64 value.");
 
-    EXPECT_EXIT(
-            cflag::parse(arguments),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*invalid.*");
+    EXPECT_EXIT(cflag::parse(arguments), testing::ExitedWithCode(EXIT_FAILURE), ".*invalid.*");
 }

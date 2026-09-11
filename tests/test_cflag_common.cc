@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
 #include <gtest/gtest.h>
+
+#include "cflag.h"
 
 TEST(test_common, test_usage) {
     bool result;
@@ -33,20 +34,16 @@ TEST(test_common, test_print_flags_aligns_usage_column) {
     cflag::c_flag_set flag_set;
 
     flag_set.varp(&alpha, "alpha", "a", false, "alpha usage.");
-    flag_set.var(
-            &long_option,
-            "long-option",
-            std::string(),
-            "long option usage.");
+    flag_set.var(&long_option, "long-option", std::string(), "long option usage.");
 
     testing::internal::CaptureStdout();
     flag_set.print_flags();
     const std::string output = testing::internal::GetCapturedStdout();
 
     EXPECT_EQ(
-            " -a  --alpha[bool]         alpha usage.(false)\n"
-            "     --long-option[string] long option usage.\n",
-            output);
+        " -a  --alpha[bool]         alpha usage.(false)\n"
+        "     --long-option[string] long option usage.\n",
+        output);
 }
 
 TEST(test_common, test_terminat) {
@@ -85,8 +82,8 @@ TEST(test_common, test_exist_args) {
     cflag::parse(arguments);
 
     EXPECT_TRUE(result);
-    
-    std::vector<std::string> &args = cflag::args();
+
+    std::vector<std::string>& args = cflag::args();
     EXPECT_EQ(2, args.size());
     EXPECT_STREQ(args.at(0).c_str(), arg00.c_str());
     EXPECT_STREQ(args.at(1).c_str(), arg01.c_str());
@@ -109,7 +106,7 @@ TEST(test_common, test_left_args) {
 
     EXPECT_TRUE(result);
 
-    std::vector<std::string> &args = cflag::args();
+    std::vector<std::string>& args = cflag::args();
     EXPECT_EQ(2, args.size());
     EXPECT_STREQ(arg00.c_str(), args.at(0).c_str());
     EXPECT_STREQ(arg01.c_str(), args.at(1).c_str());
@@ -128,8 +125,8 @@ TEST(test_common, test_null_args) {
     cflag::parse(arguments);
 
     EXPECT_TRUE(result);
-    
-    std::vector<std::string> &args = cflag::args();
+
+    std::vector<std::string>& args = cflag::args();
     EXPECT_EQ(0, args.size());
 }
 
@@ -194,8 +191,6 @@ TEST(test_common, test_rejects_multi_character_short_name) {
 
     cflag::reset();
 
-    EXPECT_EXIT(
-            cflag::varp(&result, "test", "tt", false, "invalid short flag."),
-            testing::ExitedWithCode(EXIT_FAILURE),
-            ".*one character.*");
+    EXPECT_EXIT(cflag::varp(&result, "test", "tt", false, "invalid short flag."), testing::ExitedWithCode(EXIT_FAILURE),
+                ".*one character.*");
 }

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cflag.h"
-
 #include <iostream>
 
-int main(int argc, char *argv[]) {
+#include "cflag.h"
+
+int main(int argc, char* argv[]) {
     int port = 0;
     bool daemon = false;
     bool version = false;
