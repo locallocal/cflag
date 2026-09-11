@@ -31,7 +31,7 @@ TEST(test_common, test_usage) {
 TEST(test_common, test_print_flags_aligns_usage_column) {
     bool alpha = false;
     std::string long_option;
-    cflag::c_flag_set flag_set;
+    cflag::flag_set flag_set;
 
     flag_set.varp(&alpha, "alpha", "a", false, "alpha usage.");
     flag_set.var(&long_option, "long-option", std::string(), "long option usage.");
