@@ -337,6 +337,23 @@ cflag::var(
 `parse` should only update its output parameter when conversion succeeds.
 Return `false` to reject a value.
 
+## Agent skill
+
+[`skills/cflag`](skills/cflag) packages the integration steps, API reference,
+flag file formats, and starter templates as a skill for coding agents such as
+Claude Code. To let an agent use it in another project, copy or symlink the
+directory into that project's skill folder:
+
+```shell
+cp -r path/to/cflag/skills/cflag <project>/.claude/skills/cflag
+# or, for every project of the current user:
+cp -r path/to/cflag/skills/cflag ~/.claude/skills/cflag
+```
+
+The agent then loads the skill whenever a task involves adding flags, wiring
+cflag into CMake, or using flag files. `skills/cflag/SKILL.md` is the entry
+point; `references/` and `templates/` hold the supporting material.
+
 ## Build and test
 
 The helper script configures and builds the appropriate CMake targets:

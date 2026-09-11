@@ -320,6 +320,22 @@ cflag::var(
 
 `parse` 只应在转换成功时修改输出参数；无法转换时返回 `false`。
 
+## Agent skill
+
+[`skills/cflag`](../skills/cflag) 把集成步骤、API 参考、参数文件格式和起步
+模板打包成了供 Claude Code 等编码 agent 使用的 skill。要在其他项目中启用，
+把该目录复制或软链接到对应项目的 skill 目录即可：
+
+```shell
+cp -r path/to/cflag/skills/cflag <project>/.claude/skills/cflag
+# 或对当前用户的所有项目生效：
+cp -r path/to/cflag/skills/cflag ~/.claude/skills/cflag
+```
+
+之后 agent 在处理添加参数、通过 CMake 接入 cflag 或使用参数文件等任务时会
+自动加载该 skill。入口是 `skills/cflag/SKILL.md`，`references/` 和
+`templates/` 存放配套材料。
+
 ## 构建和测试
 
 辅助脚本会配置并构建对应的 CMake target：
