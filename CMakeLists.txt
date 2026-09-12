@@ -32,12 +32,18 @@ if (CFLAG_ENABLE_COVERAGE)
 endif()
 
 if (CFLAG_BUILD_EXAMPLE)
-    add_executable(example example/example.cc)
-    target_link_libraries(example PRIVATE cflag::cflag)
-    set_target_properties(example PROPERTIES
-        CXX_EXTENSIONS OFF
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
-    )
+    set(CFLAG_EXAMPLES example flag_file_json flag_file_yaml flag_file_gflags)
+    foreach(name IN LISTS CFLAG_EXAMPLES)
+        add_executable(${name} example/${name}.cc)
+        target_link_libraries(${name} PRIVATE cflag::cflag)
+        target_compile_definitions(${name} PRIVATE
+            CFLAG_EXAMPLE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/example"
+        )
+        set_target_properties(${name} PROPERTIES
+            CXX_EXTENSIONS OFF
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+        )
+    endforeach()
 endif()
 
 if (CFLAG_BUILD_TESTS)
