@@ -168,6 +168,18 @@ cflag::parse_file("server.yaml");
 cflag::parse_file("server.conf", cflag::flag_file_format::gflags);
 ```
 
+The `example` directory contains one program per format, each loading a
+bundled file with `parse_file` and printing the resulting values:
+
+| Program | Flag file | Make target |
+| --- | --- | --- |
+| `example/flag_file_json.cc` | `example/flags.json` | `make example-json` |
+| `example/flag_file_yaml.cc` | `example/flags.yaml` | `make example-yaml` |
+| `example/flag_file_gflags.cc` | `example/flags.gflags` | `make example-gflags` |
+
+Pass a different file as the first positional argument, for example
+`./build/bin/flag_file_json ./server.json`.
+
 ## Integration
 
 ### Copy the header

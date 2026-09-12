@@ -1,0 +1,6 @@
+# Flat mapping of long flag names to scalar values.
+daemon: true
+port: 9000
+point: 0.5
+ip: '127.0.0.1'
+config: "/etc/example/example.yaml.conf"

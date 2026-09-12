@@ -12,36 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Reads server flags from a JSON file with cflag::parse_file.
+//
+// The file path may be given as the first positional argument; otherwise the
+// bundled example/flags.json is used. Command-line flags are applied first,
+// then the file, so values in the file override them.
+
 #include <iostream>
+#include <string>
 
 #include "cflag.h"
+
+#ifndef CFLAG_EXAMPLE_DIR
+#define CFLAG_EXAMPLE_DIR "example"
+#endif
 
 int main(int argc, char* argv[]) {
     int port = 0;
     bool daemon = false;
-    bool version = false;
-    float point = 0.0;
+    float point = 0.0f;
     std::string ip;
     std::string conf_file;
-    std::string log_level;
 
     cflag::varp(&daemon, "daemon", "d", false, "run with daemonize.");
-    cflag::varp(&version, "version", "v", false, "show server version.");
     cflag::varp(&port, "port", "p", 9999, "server tcp port.");
     cflag::varp(&point, "point", "k", 0.0f, "percent of usage.");
     cflag::varp(&conf_file, "config", "c", "./config.conf", "config file of example.");
     cflag::var(&ip, "ip", "0.0.0.0", "server ip address.");
-    cflag::varp(&log_level, "log-level", "l", "info",
-                "minimum severity of messages written to the server log. Accepted values are trace, debug, info, warn, "
-                "error and fatal. Messages below the configured level are dropped before they are formatted, so "
-                "raising the level in production reduces I/O pressure. The level applies to every module unless a "
-                "module overrides it in its own configuration section.");
     cflag::parse(argc, argv);
 
+    const std::string path = cflag::args().empty() ? CFLAG_EXAMPLE_DIR "/flags.json" : cflag::args()[0];
+    cflag::parse_file(path, cflag::flag_file_format::json);
+
+    std::cout << "flag file: " << path << std::endl;
     std::cout << "daemon: " << std::boolalpha << daemon << std::endl;
     std::cout << "port: " << port << std::endl;
     std::cout << "point: " << point << std::endl;
+    std::cout << "ip: " << ip << std::endl;
     std::cout << "conf_file: " << conf_file << std::endl;
-    std::cout << "log_level: " << log_level << std::endl;
     return 0;
 }

@@ -1,0 +1,6 @@
+# One command-line argument per line.
+--daemon
+--port=9000
+-k0.5
+--ip=127.0.0.1
+--config=/etc/example/example.gflags.conf

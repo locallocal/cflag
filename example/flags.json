@@ -1,0 +1,7 @@
+{
+  "daemon": true,
+  "port": 9000,
+  "point": 0.5,
+  "ip": "127.0.0.1",
+  "config": "/etc/example/example.json.conf"
+}
