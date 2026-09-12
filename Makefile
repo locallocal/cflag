@@ -29,10 +29,18 @@ example: release
 	$(EXAMPLE_BIN) $(ARGS)
 
 format:
-	$(CLANG_FORMAT) -i --style=file $(SOURCES)
+	@for f in $(SOURCES); do \
+		echo "$(CLANG_FORMAT) -i --style=file $$f"; \
+		$(CLANG_FORMAT) -i --style=file $$f || exit 1; \
+	done
 
 format-check:
-	$(CLANG_FORMAT) --dry-run -Werror --style=file $(SOURCES)
+	@status=0; \
+	for f in $(SOURCES); do \
+		echo "$(CLANG_FORMAT) --dry-run -Werror --style=file $$f"; \
+		$(CLANG_FORMAT) --dry-run -Werror --style=file $$f || status=1; \
+	done; \
+	exit $$status
 
 help:
 	@echo "Targets:"
